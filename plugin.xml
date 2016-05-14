@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-cardflight" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+  <name>CDVCardFlight</name>
+  <js-module name="CDVCardFlight" src="www/CDVCardFlight.js">
+      <clobbers target="cardflight" />
+  </js-module>
+
+  <platform name="ios">
+    <config-file target="config.xml" parent="/*">
+      <feature name="CDVCardFlight">
+        <param name="ios-package" value="CDVCardFlight" />
+      </feature>
+    </config-file>
+    <header-file src="src/ios/CDVCardFlight.h" />
+    <source-file src="src/ios/CDVCardFlight.m" />
+  </platform>
+
+</plugin>
