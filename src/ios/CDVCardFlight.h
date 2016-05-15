@@ -4,7 +4,7 @@
 #import "CFTCard.h"
 #import "CFTCharge.h"
 
-@interface CDVCardFlight : CDVPlugin <readerDelegate>
+@interface CDVCardFlight : CDVPlugin <CFTReaderDelegate>
 
 - (void)setApiTokens:(CDVInvokedUrlCommand*)command;
 - (void)swipeCard:(CDVInvokedUrlCommand*)command;
