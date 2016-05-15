@@ -33,7 +33,7 @@
     <framework src="AudioToolbox.framework" />
     <framework src="MediaPlayer.framework" />
     <framework src="MessageUI.framework" />
-    <framework src="ExternalAccessory.framework" />
     <framework src="CoreGraphics.framework" />
+    <framework src="libstdc++.6.0.9.tbd" />
   </platform>
 </plugin>

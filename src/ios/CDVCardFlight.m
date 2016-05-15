@@ -1,36 +1,179 @@
 #import "CDVCardFlight.h"
 #import <Cordova/CDV.h>
 
+@interface CDVCardFlight ()
+@property (nonatomic) CFTReader *reader;
+@property (nonatomic) CFTCard *card;
+@property (nonatomic) CDVPluginResult *readerPluginResult;
+@property (nonatomic) NSString *onReaderAttachedCallbackId;
+@property (nonatomic) NSString *onReaderConnectedCallbackId;
+@property (nonatomic) NSString *onReaderDisconnectedCallbackId;
+@property (nonatomic) NSString *onReaderConnectingCallbackId;
+@end
+
 @implementation CDVCardFlight
 
-- (void)echo:(CDVInvokedUrlCommand*)command
-{
+- (void)setApiTokens:(CDVInvokedUrlCommand*)command {
+  NSString* apiToken = [command.arguments objectAtIndex:0];
+  NSString* accountToken = [command.arguments objectAtIndex:1];
   CDVPluginResult* pluginResult = nil;
-  NSString* msg = [command.arguments objectAtIndex:0];
 
-  if (msg == nil || [msg length] == 0) {
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+  [[CardFlight sharedInstance] setApiToken:apiToken accountToken:accountToken];
+
+  NSLog(@"API TOKEN: %@ ACCOUNT TOKEN: %@\n", [[CardFlight sharedInstance] getApiToken], [[CardFlight sharedInstance] getAccountToken]);
+  
+  _reader = [[CFTReader alloc] initAndConnect];
+  if (_reader) {
+    [_reader setDelegate:self];
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
   } else {
-    UIAlertView *toast = [
-      [UIAlertView alloc] initWithTitle:@""
-        message:msg
-        delegate:nil
-        cancelButtonTitle:nil
-        otherButtonTitles:nil, nil];
-
-    [toast show];
-        
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), 
-dispatch_get_main_queue(), ^{
-      [toast dismissWithClickedButtonIndex:0 animated:YES];
-    });
-        
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK 
-messageAsString:msg];
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
   }
+  
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
 
-  [self.commandDelegate sendPluginResult:pluginResult 
-callbackId:command.callbackId];
+
+- (void)swipeCard:(CDVInvokedUrlCommand*)command {
+  [_reader beginSwipeWithMessage:@"Swipe Card"];
+  
+  // Here wait for the cardResponse to complete via block
+  
+  __weak CDVCardFlight *weakSelf = self;
+  readerDone = ^{
+      [weakSelf.commandDelegate sendPluginResult:weakSelf.readerPluginResult
+                                      callbackId:command.callbackId];
+      NSLog(@"READER DONE");
+      NSLog(@"READER CALLBACKID %@\n", command.callbackId);
+      NSLog(@"READER RESULT %@\n", weakSelf.readerPluginResult);
+  };
+  weakSelf = nil;
+}
+
+- (void)readerCardResponse:(CFTCard *)card withError:(NSError *)error {
+  if (error) {
+      UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"CardFlight" message:error.localizedDescription delegate:self 
+                                            cancelButtonTitle:@"Okay" otherButtonTitles:nil];
+      [alert show];
+  } else {
+    _card = card;
+    NSLog(@"IN RESPONSE %@", _card.name);
+    [_card tokenizeCardWithSuccess:^{
+        NSLog(@"Card Token:  %@\n", _card.cardToken);
+        _readerPluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
+                                messageAsDictionary:@{@"cardToken": _card.cardToken}];
+          // Callback to the block in the swipeCard method
+          readerDone();
+     }
+     failure:^(NSError *error){
+         NSLog(@"ERROR CODE: %i", error.code);
+         _readerPluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                                 messageAsString:error.localizedDescription];
+        // Callback to the block in the swipeCard method
+        readerDone();
+     }];
+  }
+}
+
+
+//Response after manual entry
+-(void)manualEntryDictionary:(NSDictionary *)dictionary
+{
+}
+
+
+//Server response after submitting data
+-(void)serverResponse:(NSData *)response andError:(NSError *)error {
+  //Manage the CardFlight API server response
+  NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:response options:NSJSONReadingMutableContainers error:&error];
+  NSLog(@"Server Response: %@", jsonDict);
+}
+
+- (void)readerIsAttached {
+  NSLog(@"called readerIsAttached");
+  NSLog(@"CallbackId %@", self.onReaderAttachedCallbackId);
+  // fire corresponding callback id for onReaderAttached
+  if (self.onReaderAttachedCallbackId) {
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [result setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:result callbackId:self.onReaderAttachedCallbackId];
+  }
+}
+
+- (void)readerIsDisconnected {
+  NSLog(@"called readerIsDisconnected");
+  NSLog(@"CallbackId %@", self.onReaderDisconnectedCallbackId);
+  // fire corresponding callback id for onReaderAttached
+  if (self.onReaderDisconnectedCallbackId) {
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:result callbackId:self.onReaderDisconnectedCallbackId];
+  }
+}
+
+- (void)readerIsConnecting {
+  NSLog(@"called readerIsConnecting");
+  NSLog(@"CallbackId %@", self.onReaderConnectingCallbackId);
+  if (self.onReaderConnectingCallbackId) {
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:result callbackId:self.onReaderDisconnectedCallbackId];
+  }
+} 
+
+
+- (void)readerIsConnected:(BOOL)isConnected withError:(NSError *)error {
+  NSLog(@"called readerIsConnected");
+  NSLog(@"CallbackId %@", self.onReaderConnectedCallbackId);
+  CDVPluginResult* result;
+
+  if (self.onReaderConnectingCallbackId) {
+    if (isConnected) {
+      NSLog(@"READER IS CONNECTED");
+      result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    } else {
+        NSLog(@"ERROR CODE: %i", error.code);
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    }
+    [self.commandDelegate sendPluginResult:result callbackId:self.onReaderDisconnectedCallbackId];
+  }
+}
+
+
+- (void)startOnReaderAttached:(CDVInvokedUrlCommand*)command {
+  onReaderAttachedCallbackId = command.callbackId;
+  CDVPluginResult* pluginResult = nil;
+  pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+  [pluginResult setKeepCallbackAsBool:YES];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  NSLog(@"called startOnReaderAttached");
+}
+
+
+- (void)startOnReaderDisconnected:(CDVInvokedUrlCommand*)command {
+  onReaderDisconnectedCallbackId = command.callbackId;
+  CDVPluginResult* pluginResult = nil;
+  pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+  [pluginResult setKeepCallbackAsBool:YES];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  NSLog(@"called startOnReaderDisconnected");
+}
+
+
+- (void)startOnReaderConnected:(CDVInvokedUrlCommand*)command {
+  onReaderConnectedCallbackId = command.callbackId;
+  CDVPluginResult* pluginResult = nil;
+  pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+  [pluginResult setKeepCallbackAsBool:YES];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  NSLog(@"called startOnReaderConnected");
+}
+
+- (void)startOnReaderConnecting:(CDVInvokedUrlCommand*)command {
+  onReaderConnectingCallbackId = command.callbackId;
+  CDVPluginResult* pluginResult = nil;
+  pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+  [pluginResult setKeepCallbackAsBool:YES];
+  [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  NSLog(@"called startOnReaderConnecting");
 }
 
 @end
