@@ -27,6 +27,8 @@
     <header-file src="src/ios/CFTAPIResource.h" />
 
     <source-file src="src/ios/CDVCardFlight.m" />
+    <source-file src="src/ios/libCardFlightAttacheLibrary.a" framework="true" />
+    <source-file src="src/ios/libCardFlightLibrary.a" framework="true" />
     
     <framework src="AVFoundation.framework" />
     <framework src="AudioToolbox.framework" />
