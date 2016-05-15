@@ -11,8 +11,28 @@
         <param name="ios-package" value="CDVCardFlight" />
       </feature>
     </config-file>
-    <header-file src="src/ios/CDVCardFlight.h" />
-    <source-file src="src/ios/CDVCardFlight.m" />
-  </platform>
 
+    <header-file src="src/ios/CDVCardFlight.h" />
+    <header-file src="src/ios/CardFlight.h" />
+    <header-file src="src/ios/CFTReader.h" />
+    <header-file src="src/ios/CFTCard.h" />
+    <header-file src="src/ios/CFTCharge.h" />
+    <header-file src="src/ios/CFTAttacheReader.h" />
+    <header-file src="src/ios/CFTBaseReader.h" />
+    <header-file src="src/ios/CFTCustomEntryTextField.h" />
+    <header-file src="src/ios/CFTCustomView.h" />
+    <header-file src="src/ios/CFTEnum.h" />
+    <header-file src="src/ios/CFTPaymentView.h" />
+    <header-file src="src/ios/CFTSessionManager.h" />
+    <header-file src="src/ios/CFTAPIResource.h" />
+
+    <source-file src="src/ios/CDVCardFlight.m" />
+    
+    <framework src="AVFoundation.framework" />
+    <framework src="AudioToolbox.framework" />
+    <framework src="MediaPlayer.framework" />
+    <framework src="MessageUI.framework" />
+    <framework src="ExternalAccessory.framework" />
+    <framework src="CoreGraphics.framework" />
+  </platform>
 </plugin>
