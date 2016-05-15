@@ -18,9 +18,9 @@
   NSString* accountToken = [command.arguments objectAtIndex:1];
   CDVPluginResult* pluginResult = nil;
 
-  [[CardFlight sharedInstance] setApiToken:apiToken accountToken:accountToken];
+  [[CDVCardFlight sharedInstance] setApiToken:apiToken accountToken:accountToken];
 
-  NSLog(@"API TOKEN: %@ ACCOUNT TOKEN: %@\n", [[CardFlight sharedInstance] getApiToken], [[CardFlight sharedInstance] getAccountToken]);
+  NSLog(@"API TOKEN: %@ ACCOUNT TOKEN: %@\n", [[CDVCardFlight sharedInstance] getApiToken], [[CDVCardFlight sharedInstance] getAccountToken]);
   
   _reader = [[CFTReader alloc] initAndConnect];
   if (_reader) {
