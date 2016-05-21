@@ -7,6 +7,9 @@ var argscheck = require('cordova/argscheck'),
 channel.createSticky('onCordovaCardFlightReady');
 channel.waitForInitialization('onCordovaCardFlightReady');
 
+var CFATTACHED = false;
+var CFCONNECTED = false;
+
 function CardFlight() {
   this.available = false;
   this.platform = null;
@@ -16,14 +19,9 @@ function CardFlight() {
   var _this = this;
 
   channel.onCordovaReady.subscribe(function() {
-    _this.echo();
     _this.initialize();
   });
 }
-
-CardFlight.prototype.echo = function(arg0, success, error) {
-  exec(success, error, "CDVCardFlight", "echo", [arg0]);
-};
 
 CardFlight.prototype.configure = function(options) {
   var successCallback = function() {
@@ -35,20 +33,38 @@ CardFlight.prototype.configure = function(options) {
   this.setApiTokens(successCallback, errorCallback, options);
 }
 
-CardFlight.prototype.initialize = function() {
+CardFlight.prototype.isAttached = function() {
+  return CFATTACHED;
+}
 
-  var successCallback = function() {
-    window.alert("startOnReaderAttached Successful");
-  };
+CardFlight.prototype.isConnected = function() {
+  return CFCONNECTED;
+}
+
+CardFlight.prototype.initialize = function() {
   var errorCallback = function() {
-    window.alert("startOnReaderAttached failure");
+    console.log("callback failure");
   }
-  this.startOnReaderAttached(successCallback, errorCallback);
-  this.startOnReaderConnected(successCallback, errorCallback);
-  this.startOnReaderDisconnected(successCallback, errorCallback);
-  this.startOnReaderConnecting(successCallback, errorCallback);
+  this.registerOnReaderAttached(function(){
+    CFATTACHED = true;
+  }, errorCallback);
+  this.registerOnReaderDisconnected(function(){
+    CFCONNECTED = false;
+    cordova.fireDocumentEvent('CFReaderPlugged');
+  }, errorCallback);
+  this.registerOnReaderConnected(function(){
+    CFCONNECTED = true;
+    cordova.fireDocumentEvent('CFReaderPlugged');
+  }, errorCallback);
+  this.registerOnEMVMessage(function(msg){
+    window.alert(msg, 'Instruction');
+  }, errorCallback);
+  this.registerOnReaderResponse(function(last4){
+    window.alert(last4, 'Card Success');
+  }, errorCallback);
 
   channel.onCordovaCardFlightReady.fire();
+
 }
 
 
@@ -56,24 +72,36 @@ CardFlight.prototype.setApiTokens = function(successCallback, errorCallback, opt
   exec(successCallback, errorCallback, "CDVCardFlight", "setApiTokens", [options.apiToken, options.accountToken]);
 };
 
-CardFlight.prototype.beginSwipe = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "swipeCard", []);
+CardFlight.prototype.beginEMV = function(successCallback, errorCallback, options) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "beginEMV", [options.amount, options.details]);
 };
 
-CardFlight.prototype.startOnReaderAttached = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "startOnReaderAttached", []);
+CardFlight.prototype.beginKeyed = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "beginKeyed", []);
 };
 
-CardFlight.prototype.startOnReaderConnected = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "startOnReaderConnected", []);
+CardFlight.prototype.registerOnReaderResponse = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderResponse", []);
 };
 
-CardFlight.prototype.startOnReaderDisconnected = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "startOnReaderDisconnected", []);
+CardFlight.prototype.registerOnReaderAttached = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderAttached", []);
 };
 
-CardFlight.prototype.startOnReaderConnecting = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "startOnReaderConnecting", []);
+CardFlight.prototype.registerOnEMVMessage = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnEMVMessage", []);
+};
+
+CardFlight.prototype.registerOnReaderConnected = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderConnected", []);
+};
+
+CardFlight.prototype.registerOnReaderDisconnected = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderDisconnected", []);
+};
+
+CardFlight.prototype.registerOnReaderConnecting = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderConnecting", []);
 };
 
 module.exports = new CardFlight();
