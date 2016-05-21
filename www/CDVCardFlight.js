@@ -80,6 +80,10 @@ CardFlight.prototype.beginKeyed = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "beginKeyed", []);
 };
 
+CardFlight.prototype.endKeyed = function(successCallback, errorCallback) {
+    exec(successCallback, errorCallback, "CDVCardFlight", "endKeyed", []);
+  };
+
 CardFlight.prototype.registerOnReaderResponse = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderResponse", []);
 };
