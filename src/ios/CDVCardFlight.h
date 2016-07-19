@@ -3,14 +3,8 @@
 #import "CFTReader.h"
 #import "CFTCard.h"
 #import "CFTCharge.h"
+#import "CFTSessionManager.h"
 
-@interface CDVCardFlight : CDVPlugin <CFTReaderDelegate>
-
-- (void)setApiTokens:(CDVInvokedUrlCommand*)command;
-- (void)swipeCard:(CDVInvokedUrlCommand*)command;
-- (void)startOnReaderAttached:(CDVInvokedUrlCommand*)command;
-- (void)startOnReaderDisconnected:(CDVInvokedUrlCommand*)command;
-- (void)startOnReaderConnected:(CDVInvokedUrlCommand*)command;
-- (void)startOnReaderConnecting:(CDVInvokedUrlCommand*)command;
+@interface CDVCardFlight : CDVPlugin <CFTReaderDelegate, CFTPaymentViewDelegate>
 
 @end

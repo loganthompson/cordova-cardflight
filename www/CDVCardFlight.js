@@ -11,27 +11,18 @@ var CFATTACHED = false;
 var CFCONNECTED = false;
 
 function CardFlight() {
-  this.available = false;
-  this.platform = null;
   this.cordova = null;
   this.config = null;
 
-  var _this = this;
+  var self = this;
 
   channel.onCordovaReady.subscribe(function() {
-    _this.initialize();
+    self.initialize();
   });
 }
 
-CardFlight.prototype.configure = function(options) {
-  var successCallback = function() {
-    console.log("SUCCESSFULLY SET TOKENS");
-  };
-  var errorCallback = function() {
-    console.log("ERROR SETTING TOKENS");
-}
-  this.setApiTokens(successCallback, errorCallback, options);
-}
+// Call cardflight.isConnected or cardflight.isAttached
+// anytime to check the physical card reader status
 
 CardFlight.prototype.isAttached = function() {
   return CFATTACHED;
@@ -40,6 +31,9 @@ CardFlight.prototype.isAttached = function() {
 CardFlight.prototype.isConnected = function() {
   return CFCONNECTED;
 }
+
+// Sets onReaderAttached & Connected callbacks to update whenever
+// the reader is plugged in / connected
 
 CardFlight.prototype.initialize = function() {
   var errorCallback = function() {
@@ -56,33 +50,57 @@ CardFlight.prototype.initialize = function() {
     CFCONNECTED = true;
     cordova.fireDocumentEvent('CFReaderPlugged');
   }, errorCallback);
-  this.registerOnEMVMessage(function(msg){
-    window.alert(msg, 'Instruction');
-  }, errorCallback);
-  this.registerOnReaderResponse(function(last4){
-    window.alert(last4, 'Card Success');
-  }, errorCallback);
 
   channel.onCordovaCardFlightReady.fire();
-
 }
 
-
 CardFlight.prototype.setApiTokens = function(successCallback, errorCallback, options) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "setApiTokens", [options.apiToken, options.accountToken]);
+  exec(successCallback, errorCallback, "CDVCardFlight", "setApiTokens", [options]);
+};
+
+CardFlight.prototype.beginSwipe = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "beginSwipe", []);
 };
 
 CardFlight.prototype.beginEMV = function(successCallback, errorCallback, options) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "beginEMV", [options.amount, options.details]);
+  exec(successCallback, errorCallback, "CDVCardFlight", "beginEMV", [options]);
 };
 
-CardFlight.prototype.beginKeyed = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "beginKeyed", []);
+CardFlight.prototype.cancelTransaction = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "cancelTransaction", []);
+};
+
+CardFlight.prototype.destroy = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "destroy", []);
+};
+
+CardFlight.prototype.processCharge = function(successCallback, errorCallback, options) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "processCharge", [options]);
+};
+
+CardFlight.prototype.uploadSignature = function(successCallback, errorCallback, options) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "uploadSignature", [options]);
+};
+
+CardFlight.prototype.beginKeyed = function(successCallback, errorCallback, options) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "beginKeyed", [options]);
 };
 
 CardFlight.prototype.endKeyed = function(successCallback, errorCallback) {
-    exec(successCallback, errorCallback, "CDVCardFlight", "endKeyed", []);
-  };
+  exec(successCallback, errorCallback, "CDVCardFlight", "endKeyed", []);
+};
+
+CardFlight.prototype.registerOnCardSwiped = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnCardSwiped", []);
+};
+
+CardFlight.prototype.registerOnEMVCardDipped = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnEMVCardDipped", []);
+};
+
+CardFlight.prototype.registerOnEMVCardRemoved = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnEMVCardRemoved", []);
+};
 
 CardFlight.prototype.registerOnReaderResponse = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderResponse", []);
@@ -104,8 +122,20 @@ CardFlight.prototype.registerOnReaderDisconnected = function(successCallback, er
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderDisconnected", []);
 };
 
+CardFlight.prototype.registerOnReaderNotDetected = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderNotDetected", []);
+};
+
 CardFlight.prototype.registerOnReaderConnecting = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderConnecting", []);
+};
+
+CardFlight.prototype.registerOnTransactionResult = function(successCallback, errorCallback, options) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnTransactionResult", []);
+};
+
+CardFlight.prototype.registerOnLowBattery = function(successCallback, errorCallback, options) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnLowBattery", []);
 };
 
 module.exports = new CardFlight();
