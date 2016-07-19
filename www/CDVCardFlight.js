@@ -11,6 +11,7 @@ var CFATTACHED = false;
 var CFCONNECTED = false;
 
 function CardFlight() {
+  this.available = false;
   this.cordova = null;
   this.config = null;
 
