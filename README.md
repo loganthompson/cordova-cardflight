@@ -15,7 +15,7 @@ Access the `cardflight` globally, available after the document's `deviceReady` e
 
 ##Getting Started
 
-The callbacks for readerAttached, readerConnected and readerDisconnected will set themselves immediately, when the plugin receives Cordova's onCordovaReady event. On the iOS side, the reader itself is not initialized by the SDK until you set the API tokens.
+The callbacks for readerAttached, readerConnected and readerDisconnected will set themselves immediately, when the plugin receives Cordova's onCordovaReady event. On the native side, the reader itself is not initialized by the SDK until you set the API tokens.
 
 Example:
 ```javascript
