@@ -1,4 +1,4 @@
-#CardFlight Cordova Plugin v1.0
+#CardFlight Cordova Plugin v 1.0
 
 This plugin allows direct interactions with the native CardFlight SDK through JavaScript functions in your Cordova app. This includes creating EMV, swipe and keyed credit card charges, among other features.
 
