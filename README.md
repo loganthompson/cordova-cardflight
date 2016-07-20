@@ -3,8 +3,9 @@
 This plugin allows direct interactions with the native CardFlight SDK through JavaScript functions in your Cordova app. This includes creating EMV, swipe and keyed credit card charges, among other features.
 
 ###CardFlight SDK Version 3.2
+[SDK Documentation](https://developers.cardflight.com/docs/api/)
 
-Install
+##Install
 
     cordova plugin add https://github.com/loganthompson/cordova-cardflight.git
 
@@ -36,140 +37,197 @@ After success, the plugin returns the bool value 'emvReady' to your successCallb
 
 ## Methods
 
-###setApiToken
-Set API tokens to initalize CardFlight with apiKey and accountToken values
-Initializes reader itself, and a success returns emvReady as BOOL
+###cardflight.setApiToken()
+
+Set API tokens to initalize CardFlight with apiKey and accountToken values. Requires `apiKey` and `accountToken` arguments. `readerType` argument is optional.
+
+This method will also nitialize reader itself, and a success returns `emvReady` as a BOOL
 ````javascript
-CardFlight.prototype.setApiTokens = function(successCallback, errorCallback, options) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "setApiTokens", [options]);
-};
+cardflight.setApiTokens(successCallback, errorCallback, {
+    apiKey: YOUR_CARDFLIGHT_API_KEY
+    accountToken: YOUR_CARDFLIGHT_ACCOUNT_TOKEN,
+    readerType: READER_TYPE // optional
+});
+````
+###cardflight.beginSwipe()
+
+Prepare the reader for a credit card swipe
+````javascript
+cardflight.beginSwipe(successCallback, errorCallback);
 ````
 
-Prepare the reader for a swipe
+###cardflight.beginEMV()
+
+Begin an EMV transaction with setup information, including amount and optional description
 ````javascript
-CardFlight.prototype.beginSwipe = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "beginSwipe", []);
-};
+cardflight.beginEMV(successCallback, errorCallback, {
+    amount: CHARGE_AMOUNT, // String value with decimal e.g. '5.00' or '.50'
+    description: CHARGE_DESCRIPTION // optional
+});
 ````
 
-Begin an EMV transaction with setup information,
-including amount and optional description
-````javascript
-CardFlight.prototype.beginEMV = function(successCallback, errorCallback, options) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "beginEMV", [options]);
-};
+###cardflight.beginKeyed()
 
-Trigger keyed entry payment view. Will show a little more than 1/4 down
-the screen, above cordova webview.
-Enable zip by passing optional {zip:true}. Default bool value = NO
-CardFlight.prototype.beginKeyed = function(successCallback, errorCallback, options) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "beginKeyed", [options]);
-};
+Trigger keyed entry and show input view. View will appear a little more than 1/4 down the screen, above cordova webview. Enable zip by passing optional {zip:true}. Default bool value = NO
+````javascript
+cardflight.beginKeyed(successCallback, errorCallback, {
+    zip: BOOL // optional
+});
+````
+
+###cardflight.endKeyed()
 
 Removes the keyed-entry payment view and hides keyboard
-CardFlight.prototype.endKeyed = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "endKeyed", []);
-};
+````javascript
+cardflight.endKeyed(successCallback, errorCallback);
+````
+###cardflight.cancelTransaction()
 
 Cancel the current transaction
-CardFlight.prototype.cancelTransaction = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "cancelTransaction", []);
-};
+````javascript
+cardflight.cancelTransaction(successCallback, errorCallback);
+````
+###cardflight.destroy()
 
-Run CardFlight destroy()
-CardFlight.prototype.destroy = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "destroy", []);
-};
+Run CardFlight's destroy method
+````javascript
+cardflight.destroy(successCallback, errorCallback);
+````
+
+###cardflight.processCharge()
 
 Process a payment of any type.
-Required arguments: amount, type ('emv', 'swipe' or 'keyed')
+*Required arguments: amount, type ('emv', 'swipe' or 'keyed')
 Optional argument: description
-Transaction results of any type will be sent through registerOnTransactionResult callbacks.
-CardFlight.prototype.processCharge = function(successCallback, errorCallback, options) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "processCharge", [options]);
-};
 
-Upload signature PNG data if/when required.
-Accepts a single argument 'data' as base64 encoded string.
-CardFlight.prototype.uploadSignature = function(successCallback, errorCallback, options) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "uploadSignature", [options]);
-};
+*For emv charges, you can leave off amount and description, as they won't be used, but it is good practice to process charges with all available arguments.
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onCardSwiped will send results to the callbacks passed here.
-CardFlight.prototype.registerOnCardSwiped = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnCardSwiped", []);
-};
+In the case of an emv Transaction results of any type will be sent through registerOnTransactionResult callbacks.
+````javascript
+cardflight.processCharge(successCallback, errorCallback, {
+    type: CHARGE_TYPE,
+    amount: CHARGE_AMOUNT,
+    description: CHARGE_DESCRIPTION // optional
+});
+````
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onEMVCardDipped will send results to the callbacks passed here.
-CardFlight.prototype.registerOnEMVCardDipped = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnEMVCardDipped", []);
-};
+###cardflight.uploadSignature()
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onEMVCardRemoved will send results to the callbacks passed here.
-CardFlight.prototype.registerOnEMVCardRemoved = function(successCallback, errorCallback) {
+Upload signature PNG data if/when required. Accepts a single argument `data` as base64 encoded string.
+````javascript
+cardflight.uploadSignature(successCallback, errorCallback, {
+    data: DATA // base64 encoded string of png signature image
+});
+````
+
+##Register Listener Callbacks
+
+The above methods return a callback immediately, the `id` of which does not need to last. But for listeners that persist and need to be ready for an event to fire in the future, we have to register those callbacks. Use the following methods to register (or re-register) callbacks for a given event.
+
+###cardflight.registerOnCardSwiped()
+
+Set listener on card swipe event (not the same as card or transaction responses; includes no data).
+````javascript
+cardflight.registerOnCardSwiped(successCallback, errorCallback);
+````
+
+###cardflight.registerOnEMVCardDipped()
+
+Set listener to detect when an EMV card is physically dipped.
+````javascript
+cardflight.registerOnEMVCardDipped(successCallback, errorCallback);
+````
+###cardflight.registerOnEMVCardRemoved()
+
+Set listener to detect when an EMV card is physically removed.
+````javascript
+cardflight.registerOnEMVCardRemoved(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnEMVCardRemoved", []);
 };
+````
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onReaderResponse will send results to the callbacks passed here.
-Receives updates for valid keyed card responses (will include card JSON with last4 and brand),
-invalidKeyedResponse (no card), readerCardResponse (card JSON with name & last4),
-readerSwipeDidCancel, and emvCardResponse (card JSON).
-CardFlight.prototype.registerOnReaderResponse = function(successCallback, errorCallback) {
+###cardflight.registerOnReaderResponse()
+
+Set listener to receive updates for valid keyed card responses (will include card JSON with last4 and brand), invalidKeyedResponse (no card), readerCardResponse (card JSON with name & last4), readerSwipeDidCancel, and emvCardResponse (card JSON).
+
+To handle transaction results of different types in different ways, call `registerOnReaderResponse` and pass a new successCallback whenever you change transactions (from keyed to swipe, for example).
+
+````javascript
+cardflight.registerOnReaderResponse(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderResponse", []);
 };
+````
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onReaderAttached will send results to the callbacks passed here.
-CardFlight.prototype.registerOnReaderAttached = function(successCallback, errorCallback) {
+###cardflight.registerOnReaderAttached()
+
+Set listener for the event fired when a card reader is physically attached via the headphone jack.
+````javascript
+cardflight.registerOnReaderAttached(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderAttached", []);
 };
+````
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onEMVMessage will send results to the callbacks passed here.
-Success callback receives all EMV instruction/status updates during transaction,
-which is useful for showing "processing" status, "Approved," "Remove Card" etc.
-CardFlight.prototype.registerOnEMVMessage = function(successCallback, errorCallback) {
+###cardflight.registerOnEMVMessage()
+
+Set a listener to receive all EMV instruction/status updates during transaction, which is useful for showing "processing" status, "Approved," "Remove Card" etc.
+````javascript
+cardflight.registerOnEMVMessage(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnEMVMessage", []);
 };
+````
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onReaderConnecting will send results to the callbacks passed here.
-CardFlight.prototype.registerOnReaderConnecting = function(successCallback, errorCallback) {
+
+###cardflight.registerOnReaderConnecting()
+
+Set a listener for the physical reader's `connecting` state (physically attached but not yet connected).
+````javascript
+cardflight.registerOnReaderConnecting(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderConnecting", []);
 };
+````
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onReaderConnected will send results to the callbacks passed here.
-CardFlight.prototype.registerOnReaderConnected = function(successCallback, errorCallback) {
+
+###cardflight.registerOnReaderConnected()
+
+Set a listener for the physical reader's `connected` state (physically attached and connected).
+````javascript
+cardflight.registerOnReaderConnected(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderConnected", []);
 };
+````
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onReaderDisconnected will send results to the callbacks passed here.
-CardFlight.prototype.registerOnReaderDisconnected = function(successCallback, errorCallback) {
+###cardflight.registerOnReaderConnected()
+
+Set a listener for the physical disconnecting of the card reader.
+````javascript
+cardflight.registerOnReaderDisconnected(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderDisconnected", []);
 };
+````
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onReaderNotDetected will send results to the callbacks passed here.
-CardFlight.prototype.registerOnReaderNotDetected = function(successCallback, errorCallback) {
+###cardflight.registerOnReaderNotDetected()
+
+Set a listener for when a connection attempt has been made but no reader was detected.
+````javascript
+cardflight.registerOnReaderNotDetected(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderNotDetected", []);
 };
+````
 
-Set callback ID to be a listener, reusable by the plugin.
-After this is set, onTransactionResult will send results to the callbacks passed here.
-Receives updates for all types of transactions.
-CardFlight.prototype.registerOnTransactionResult = function(successCallback, errorCallback, options) {
+###cardflight.registerOnTransactionResult()
+
+Set a listener for transaction results of all types. If the charge was successful and was of type emv, the callback will receive a BOOL value for `signatureRequired`.
+````javascript
+cardflight.registerOnTransactionResult(successCallback, errorCallback, options) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnTransactionResult", []);
 };
+````
 
+###cardflight.registerOnTransactionResult()
 Set callback ID to be a listener, reusable by the plugin.
 After this is set, onLowBattery will send results to the callbacks passed here.
-CardFlight.prototype.registerOnLowBattery = function(successCallback, errorCallback, options) {
+````javascript
+cardflight.registerOnLowBattery(successCallback, errorCallback, options) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnLowBattery", []);
 };
-
+````
