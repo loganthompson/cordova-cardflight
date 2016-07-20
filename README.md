@@ -49,12 +49,17 @@ cardflight.setApiTokens(successCallback, errorCallback, {
     readerType: READER_TYPE // optional
 });
 ````
+
+-----
+
 ###cardflight.beginSwipe()
 
 Prepare the reader for a credit card swipe
 ````javascript
 cardflight.beginSwipe(successCallback, errorCallback);
 ````
+
+-----
 
 ###cardflight.beginEMV()
 
@@ -66,6 +71,8 @@ cardflight.beginEMV(successCallback, errorCallback, {
 });
 ````
 
+-----
+
 ###cardflight.beginKeyed()
 
 Trigger keyed entry and show input view. View will appear a little more than 1/4 down the screen, above cordova webview. Enable zip by passing optional {zip:true}. Default bool value = NO
@@ -74,6 +81,8 @@ cardflight.beginKeyed(successCallback, errorCallback, {
     zip: BOOL // optional
 });
 ````
+
+-----
 
 ###cardflight.endKeyed()
 
@@ -129,7 +138,6 @@ cardflight.uploadSignature(successCallback, errorCallback, {
     data: DATA // base64 encoded string of png signature image
 });
 ````
-
 
 ##Register Listener Callbacks
 
