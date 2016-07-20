@@ -24,7 +24,7 @@
 @implementation CDVCardFlight
 
 // Set API tokens to initalize CardFlight with apiKey and accountToken values
-// Success returns emvReady as BOOL
+// Initializes reader itself, and a success returns emvReady as BOOL
 
 - (void)setApiTokens:(CDVInvokedUrlCommand*)command {
     NSDictionary *options = [command.arguments objectAtIndex:0];
@@ -193,7 +193,7 @@
 
 
 // Begin an EMV transaction with setup information, including
-// amount and optional metadata
+// amount and optional description
 
 - (void)beginEMV:(CDVInvokedUrlCommand*)command {
     NSDictionary *options = [command.arguments objectAtIndex:0];
