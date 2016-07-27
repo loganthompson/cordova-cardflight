@@ -230,6 +230,9 @@
  */
 - (void)beginSwipe;
 
+- (void)tokenizeCardWithSuccess:(void(^)(void))success
+          failure:(void(^)(NSError *error))failure;
+
 /*!
  * @brief Set the reader to auto timeout after 20 seconds
  * @param hasTimeout BOOL to set timeout on or off
@@ -297,7 +300,7 @@
 /*!
  * @brief Select the application in a multy AID transaction
  * @param application Index of the application selected
- * @discussion Set the application to be used for an EMV transaction. 
+ * @discussion Set the application to be used for an EMV transaction.
  * Used in conjunction with emvApplicationSelection protocol method.
  * Added in 3.0
  */

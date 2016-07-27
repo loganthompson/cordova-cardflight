@@ -19,6 +19,7 @@
 @property (nonatomic) NSString *onEMVCardDippedCallbackId;
 @property (nonatomic) NSString *onEMVCardRemovedCallbackId;
 @property (nonatomic) NSString *onTransactionResultCallbackId;
+@property (nonatomic) NSString *onTokenizeCardCallbackId;
 @end
 
 @implementation CDVCardFlight
@@ -393,6 +394,25 @@
 }
 
 
+// Tokenize a card
+// Sends plugin data via onTokenizeCardCallbackId
+
+- (void)tokenizeCardWithSuccess:(CDVInvokedUrlCommand *)command {
+    __weak CDVCardFlight *weakSelf = self;
+
+    [_card tokenizeCardWithSuccess:^{
+        NSLog(@"Token received %@", _card.cardToken);
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:_card.cardToken];
+        [result setKeepCallbackAsBool:TRUE];
+        [weakSelf.commandDelegate sendPluginResult:result callbackId:weakSelf.onTokenizeCardCallbackId];
+    } failure:^(NSError *error) {
+        NSLog(@"%@", error.localizedDescription);
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+        [result setKeepCallbackAsBool:TRUE];
+        [weakSelf.commandDelegate sendPluginResult:result callbackId:weakSelf.onTokenizeCardCallbackId];
+    }];
+}
+
 // Server response after submitting data
 
 -(void)serverResponse:(NSData *)response andError:(NSError *)error {
@@ -585,6 +605,13 @@
     NSLog(@"set onTransactionResultCallbackId");
 }
 
+// Set callback ID to be a listener, reusable by the plugin.
+// After this is set, onTokenizeCard will send results to onTokenizeCardCallbackId
+
+- (void)registerOnTokenizeCard:(CDVInvokedUrlCommand*)command {
+    self.onTokenizeCardCallbackId = command.callbackId;
+    NSLog(@"set onTokenizeCardCallbackId");
+}
 
 // Set callback ID to be a listener, reusable by the plugin.
 // After this is set, onLowBattery will send results to onLowBatteryCallbackId

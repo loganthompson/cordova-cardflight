@@ -107,6 +107,12 @@ CardFlight.prototype.uploadSignature = function(successCallback, errorCallback, 
   exec(successCallback, errorCallback, "CDVCardFlight", "uploadSignature", [options]);
 };
 
+// Tokenize a card
+// Result will be sent through registerOnTokenizeCard callbacks.
+CardFlight.prototype.tokenizeCard = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "tokenizeCardWithSuccess", []);
+};
+
 // Set callback ID to be a listener, reusable by the plugin.
 // After this is set, onCardSwiped will send results to the callbacks passed here.
 CardFlight.prototype.registerOnCardSwiped = function(successCallback, errorCallback) {
@@ -183,6 +189,12 @@ CardFlight.prototype.registerOnTransactionResult = function(successCallback, err
 // After this is set, onLowBattery will send results to the callbacks passed here.
 CardFlight.prototype.registerOnLowBattery = function(successCallback, errorCallback, options) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnLowBattery", []);
+};
+
+// Set callback ID to be a listener, reusable by the plugin.
+// After this is set, onTokenizeCard will send results to the callbacks passed here.
+CardFlight.prototype.registerOnTokenizeCard = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnTokenizeCard", []);
 };
 
 module.exports = new CardFlight();
