@@ -1,9 +1,17 @@
-#CardFlight Cordova Plugin v 1.0
+#CardFlight Cordova Plugin v 1.1
 
 This plugin allows direct interactions with the native CardFlight SDK through JavaScript functions in your Cordova app. This includes creating EMV, swipe and keyed credit card charges, among other features.
 
 ###CardFlight SDK Version 3.2
 [SDK Documentation](https://developers.cardflight.com/docs/api/) includes tips for the order in which to create charges, and other information useful to implementing this plugin.
+
+##New in 1.1
+- May now pass 'currency' variable upon charge creation
+- Can get readerState through plugin (string value)
+- Can initalize reader separately from setApiKeys function if needed
+- Adds refund method
+- Adds more callbacks (Reader Connecting state)
+- Adds support for info callbacks (tokens, sdk version)
 
 ##Install
 
