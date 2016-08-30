@@ -123,6 +123,18 @@ CardFlight.prototype.readerState = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "readerState", []);
 };
 
+CardFlight.prototype.SDKVersion = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "SDKVersion", []);
+};
+
+CardFlight.prototype.apiToken = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "apiToken", []);
+};
+
+CardFlight.prototype.accountToken = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "accountToken", []);
+};
+
 // Set callback ID to be a listener, reusable by the plugin.
 // After this is set, onCardSwiped will send results to the callbacks passed here.
 CardFlight.prototype.registerOnCardSwiped = function(successCallback, errorCallback) {
@@ -186,6 +198,12 @@ CardFlight.prototype.registerOnReaderDisconnected = function(successCallback, er
 // After this is set, onReaderNotDetected will send results to the callbacks passed here.
 CardFlight.prototype.registerOnReaderNotDetected = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderNotDetected", []);
+};
+
+// Set callback ID to be a listener, reusable by the plugin.
+// After this is set, onReaderConnecting will send results to the callbacks passed here.
+CardFlight.prototype.registerOnReaderConnecting = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "registerOnReaderConnecting", []);
 };
 
 // Set callback ID to be a listener, reusable by the plugin.

@@ -601,6 +601,51 @@
 }
 
 
+// Get the current SDK Version
+
+- (void)SDKVersion:(CDVInvokedUrlCommand *)command {
+    NSString *version = [[CFTSessionManager sharedInstance] SDKVersion];
+    
+    CDVPluginResult* result;
+    if (version) {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:version];
+    } else {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    }
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
+
+
+// Get the current apiToken
+
+- (void)apiToken:(CDVInvokedUrlCommand *)command {
+    NSString *apiToken = [[CFTSessionManager sharedInstance] apiToken];
+    
+    CDVPluginResult* result;
+    if (apiToken) {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:apiToken];
+    } else {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    }
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
+
+
+// Get the current account token
+
+- (void)accountToken:(CDVInvokedUrlCommand *)command {
+    NSString *accountToken = [[CFTSessionManager sharedInstance] accountToken];
+    
+    CDVPluginResult* result;
+    if (accountToken) {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:accountToken];
+    } else {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    }
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
+
+
 // Set callback ID to be a listener, reusable by the plugin.
 // After this is set, onReaderResponse will send results to onReaderResponseCallbackId
 
