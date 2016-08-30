@@ -60,6 +60,11 @@ CardFlight.prototype.setApiTokens = function(successCallback, errorCallback, opt
   exec(successCallback, errorCallback, "CDVCardFlight", "setApiTokens", [options]);
 };
 
+// Initialize the reader itself separately from setApiTokens
+CardFlight.prototype.initReader = function(successCallback, errorCallback, options) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "initReader", [options]);
+};
+
 // Prepare the reader for a swipe
 CardFlight.prototype.beginSwipe = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CDVCardFlight", "beginSwipe", []);
@@ -105,6 +110,17 @@ CardFlight.prototype.processCharge = function(successCallback, errorCallback, op
 // Accepts a single argument 'data' as base64 encoded string.
 CardFlight.prototype.uploadSignature = function(successCallback, errorCallback, options) {
   exec(successCallback, errorCallback, "CDVCardFlight", "uploadSignature", [options]);
+};
+
+// Refund charge using the charge ID
+CardFlight.prototype.refundCharge = function(successCallback, errorCallback, options) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "refundCharge", [options]);
+};
+
+// Returns readerState as a string
+// e.g. "WAITING_FOR_CONNECT", "REMOVE_CARD"
+CardFlight.prototype.readerState = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "readerState", []);
 };
 
 // Set callback ID to be a listener, reusable by the plugin.

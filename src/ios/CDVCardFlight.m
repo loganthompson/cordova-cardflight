@@ -30,7 +30,7 @@
     NSDictionary *options = [command.arguments objectAtIndex:0];
     NSString *apiKey = [options valueForKey:@"apiKey"];
     NSString *accountToken = [options valueForKey:@"accountToken"];
-
+    
     __weak CDVCardFlight *weakSelf = self;
     [self.commandDelegate runInBackground:^{
         [[CFTSessionManager sharedInstance] setApiToken:apiKey accountToken:accountToken completed:^(BOOL emvReady) {
@@ -51,10 +51,35 @@
             } else {
                 pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
             }
-          
+            
             [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }];
     }];
+}
+
+
+// Initialize card reader. Optional param: readerType
+
+- (void)initReader:(CDVInvokedUrlCommand*)command {
+    NSDictionary *options = [command.arguments objectAtIndex:0];
+    CDVPluginResult* pluginResult;
+    
+    // If the user passes a readerType, specify type during reader init
+    
+    NSLog(@"init reader");
+    if ([options valueForKey:@"readerType"]) {
+        self.reader = [[CFTReader alloc] initWithReader:[[options valueForKey:@"readerType"] longValue]];
+    } else {
+        self.reader = [[CFTReader alloc] init];
+    }
+    
+    
+    if (self.reader) {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    } else {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    }
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 
@@ -84,35 +109,35 @@
     } completion:^(BOOL finished) {
         [self.paymentView performSelector:@selector(becomeFirstResponder) withObject:self.webView.superview afterDelay:.1];
     }];
-
+    
     NSLayoutConstraint *centerXConstraint = [NSLayoutConstraint constraintWithItem:subView attribute:NSLayoutAttributeCenterX
-                                                                relatedBy:NSLayoutRelationEqual
-                                                                toItem:parent
-                                                                attribute:NSLayoutAttributeCenterX
-                                                                multiplier:1.0 constant:0];
-
+                                                                         relatedBy:NSLayoutRelationEqual
+                                                                            toItem:parent
+                                                                         attribute:NSLayoutAttributeCenterX
+                                                                        multiplier:1.0 constant:0];
+    
     NSLayoutConstraint *leftButtonYConstraint = [NSLayoutConstraint constraintWithItem:subView attribute:NSLayoutAttributeTop
-                                                                    relatedBy:NSLayoutRelationEqual
-                                                                    toItem:parent
-                                                                    attribute:NSLayoutAttributeTop
-                                                                    multiplier:1.0f constant:self.webView.frame.size.height/3.8];
+                                                                             relatedBy:NSLayoutRelationEqual
+                                                                                toItem:parent
+                                                                             attribute:NSLayoutAttributeTop
+                                                                            multiplier:1.0f constant:self.webView.frame.size.height/3.8];
     
     NSLayoutConstraint *widthConstraint = [NSLayoutConstraint constraintWithItem:subView
-                                                              attribute:NSLayoutAttributeWidth
-                                                              relatedBy:NSLayoutRelationEqual
-                                                              toItem:nil
-                                                              attribute:NSLayoutAttributeNotAnAttribute
-                                                              multiplier:1.0
-                                                              constant:289];
-
+                                                                       attribute:NSLayoutAttributeWidth
+                                                                       relatedBy:NSLayoutRelationEqual
+                                                                          toItem:nil
+                                                                       attribute:NSLayoutAttributeNotAnAttribute
+                                                                      multiplier:1.0
+                                                                        constant:289];
+    
     NSLayoutConstraint *heightConstraint = [NSLayoutConstraint constraintWithItem:subView
-                                                               attribute:NSLayoutAttributeHeight
-                                                               relatedBy:NSLayoutRelationEqual
-                                                               toItem:nil
-                                                               attribute:NSLayoutAttributeNotAnAttribute
-                                                               multiplier:1.0
-                                                               constant:48];
-
+                                                                        attribute:NSLayoutAttributeHeight
+                                                                        relatedBy:NSLayoutRelationEqual
+                                                                           toItem:nil
+                                                                        attribute:NSLayoutAttributeNotAnAttribute
+                                                                       multiplier:1.0
+                                                                         constant:48];
+    
     [self.webView.superview addConstraints:@[centerXConstraint, leftButtonYConstraint, widthConstraint, heightConstraint]];
 }
 
@@ -126,11 +151,13 @@
     
     _card = card;
     NSDictionary *cardDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
-                                    [card valueForKey:@"last4"], @"last4", [card valueForKey:@"cardTypeString"], @"brand", nil];
+                                    [card valueForKey:@"last4"], @"last4",
+                                    [card valueForKey:@"cardTypeString"], @"brand",
+                                    @"keyed", @"type", nil];
     
     self.readerPluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
-                                        messageAsDictionary:cardDictionary];
-
+                                            messageAsDictionary:cardDictionary];
+    
     if (self.onReaderResponseCallbackId) {
         [self.readerPluginResult setKeepCallbackAsBool:TRUE];
         [self.commandDelegate sendPluginResult:self.readerPluginResult callbackId:self.onReaderResponseCallbackId];
@@ -162,10 +189,11 @@
 }
 
 
-// Initilalize the reader for a swipe
+// Prepare the reader for a swipe
 
 - (void)beginSwipe:(CDVInvokedUrlCommand *)command {
     [self.reader beginSwipe];
+    [self.reader swipeHasTimeout:NO];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -187,18 +215,22 @@
 - (void)cancelTransaction:(CDVInvokedUrlCommand *)command {
     [self.reader cancelTransaction];
     
+    self.onEMVMessageCallbackId = nil;
+    self.onReaderResponseCallbackId = nil;
+    
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 
 // Begin an EMV transaction with setup information, including
-// amount and optional description
+// amount and optional metadata
 
 - (void)beginEMV:(CDVInvokedUrlCommand*)command {
     NSDictionary *options = [command.arguments objectAtIndex:0];
     NSDecimalNumber *amount = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"amount"]];
     NSNumber *appFee = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"applicationFee"]];
+    NSString *currency = [options valueForKey:@"currency"];
     NSDictionary *metadata;
     
     if ([options valueForKey:@"stripeAccount"] != (id)[NSNull null]) {
@@ -210,10 +242,11 @@
     NSDictionary *chargeDict = [NSDictionary dictionaryWithObjectsAndKeys:
                                 metadata, @"metadata",
                                 amount, @"amount",
+                                currency, @"currency",
                                 [options valueForKey:@"description"], @"description", nil];
     
     [self.reader beginEMVTransactionWithAmount:amount andChargeDictionary:chargeDict];
-
+    
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
@@ -287,13 +320,14 @@
 - (void)readerCardResponse:(CFTCard *)card withError:(NSError *)error {
     if (error) {
         [self.reader beginSwipe];
+        [self.reader swipeHasTimeout:NO];
         self.readerPluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
-                                               messageAsString: error.localizedDescription];
+                                                    messageAsString: error.localizedDescription];
     } else {
         _card = card;
         NSLog(@"IN RESPONSE %@", _card.name);
         self.readerPluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
-                                               messageAsDictionary:@{@"name": _card.name, @"last4": _card.last4}];
+                                                messageAsDictionary:@{@"name": _card.name, @"last4": _card.last4, @"type": @"swipe"}];
     }
     
     __weak CDVCardFlight *weakSelf = self;
@@ -310,7 +344,7 @@
 - (void)emvCardResponse:(NSDictionary *)cardDictionary {
     NSLog(@"IN RESPONSE %@", [cardDictionary valueForKey:@"last4"]);
     self.readerPluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
-                           messageAsDictionary:cardDictionary];
+                                            messageAsDictionary:cardDictionary];
     [self.readerPluginResult setKeepCallbackAsBool:TRUE];
     [self.commandDelegate sendPluginResult:self.readerPluginResult callbackId:self.onReaderResponseCallbackId];
 }
@@ -323,6 +357,7 @@
 - (void)processCharge:(CDVInvokedUrlCommand*)command; {
     NSDictionary *options = [command.arguments objectAtIndex:0];
     NSString *type = [options valueForKey:@"type"];
+    NSString *currency = [options valueForKey:@"currency"];
     NSDecimalNumber *amount = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"amount"]];
     
     if ([type isEqualToString: @"emv"]) {
@@ -333,15 +368,16 @@
         
         if ([options valueForKey:@"stripeAccount"] != (id)[NSNull null]) {
             metadata =  [NSDictionary dictionaryWithObjectsAndKeys:
-                        appFee, @"application_fee",
-                        [options valueForKey:@"stripeAccount"], @"connected_stripe_account_id", nil];
+                         appFee, @"application_fee",
+                         [options valueForKey:@"stripeAccount"], @"connected_stripe_account_id", nil];
         } else {
             metadata = [[NSDictionary alloc] init];
         }
-
+        
         NSDictionary *chargeDict = [NSDictionary dictionaryWithObjectsAndKeys:
                                     metadata, @"metadata",
                                     amount, @"amount",
+                                    currency, @"currency",
                                     [options valueForKey:@"description"], @"description", nil];
         
         __weak CDVCardFlight *weakSelf = self;
@@ -364,12 +400,12 @@
 
 - (void)emvTransactionResult:(CFTCharge *)charge requiresSignature:(BOOL)signature withError:(NSError *)error {
     CDVPluginResult* result;
-    if (charge) {
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:signature];
-        NSLog(@"Charge success");
-    } else if (error) {
+    if (error) {
         result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
         NSLog(@"%@", error.localizedDescription);
+    } else if (charge) {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:signature];
+        NSLog(@"Charge success");
     }
     
     [result setKeepCallbackAsBool:TRUE];
@@ -396,8 +432,8 @@
 // Server response after submitting data
 
 -(void)serverResponse:(NSData *)response andError:(NSError *)error {
-  NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:response options:NSJSONReadingMutableContainers error:&error];
-  NSLog(@"Server Response: %@", jsonDict);
+    NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:response options:NSJSONReadingMutableContainers error:&error];
+    NSLog(@"Server Response: %@", jsonDict);
 }
 
 
@@ -405,13 +441,13 @@
 // Sends plugin data via onReaderAttachedCallbackId
 
 - (void)readerIsAttached {
-  NSLog(@"CallbackId %@", self.onReaderAttachedCallbackId);
-  // fire corresponding callback id for onReaderAttached
-  if (self.onReaderAttachedCallbackId) {
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [result setKeepCallbackAsBool:YES];
-    [self.commandDelegate sendPluginResult:result callbackId:self.onReaderAttachedCallbackId];
-  }
+    NSLog(@"CallbackId %@", self.onReaderAttachedCallbackId);
+    // fire corresponding callback id for onReaderAttached
+    if (self.onReaderAttachedCallbackId) {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [result setKeepCallbackAsBool:YES];
+        [self.commandDelegate sendPluginResult:result callbackId:self.onReaderAttachedCallbackId];
+    }
 }
 
 
@@ -419,13 +455,13 @@
 // Sends plugin data via onReaderDisconnectedCallbackID
 
 - (void)readerIsDisconnected {
-  NSLog(@"CallbackId %@", self.onReaderDisconnectedCallbackId);
-  // fire corresponding callback id for onReaderAttached
-  if (self.onReaderDisconnectedCallbackId) {
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [result setKeepCallbackAsBool:YES];
-    [self.commandDelegate sendPluginResult:result callbackId:self.onReaderDisconnectedCallbackId];
-  }
+    NSLog(@"CallbackId %@", self.onReaderDisconnectedCallbackId);
+    // fire corresponding callback id for onReaderAttached
+    if (self.onReaderDisconnectedCallbackId) {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [result setKeepCallbackAsBool:YES];
+        [self.commandDelegate sendPluginResult:result callbackId:self.onReaderDisconnectedCallbackId];
+    }
 }
 
 
@@ -433,11 +469,11 @@
 // Sends plugin data via onReaderConnectingCallbackId
 
 - (void)readerIsConnecting {
-  NSLog(@"CallbackId %@", self.onReaderConnectingCallbackId);
-  if (self.onReaderConnectingCallbackId) {
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [self.commandDelegate sendPluginResult:result callbackId:self.onReaderConnectingCallbackId];
-  }
+    NSLog(@"CallbackId %@", self.onReaderConnectingCallbackId);
+    if (self.onReaderConnectingCallbackId) {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:result callbackId:self.onReaderConnectingCallbackId];
+    }
 }
 
 
@@ -484,6 +520,84 @@
         [result setKeepCallbackAsBool:TRUE];
         [self.commandDelegate sendPluginResult:result callbackId:self.onLowBatteryCallbackId];
     }
+}
+
+
+// Select application if multiples are available
+// Currently sets to first option (default in U.S. – must alter this for international use)
+
+- (void)emvApplicationSelection:(NSArray *)applicationArray {
+    [self.reader emvSelectApplication:0];
+}
+
+
+// Refund a charge using the chard ID / token
+// Required params: token, amount
+
+- (void)refundCharge:(CDVInvokedUrlCommand *)command {
+    NSDictionary *options = [command.arguments objectAtIndex:0];
+    NSString *chargeToken = [options valueForKey:@"chargeToken"];
+    NSDecimalNumber *amount = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"amount"]];
+    
+    __block CDVPluginResult* result;
+    
+    [CFTCharge refundChargeWithToken:chargeToken andAmount:amount success:^(CFTCharge *charge) {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        NSLog(@"Refunded!");
+    } failure:^(NSError *error) {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+        NSLog(@"Fail");
+    }];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
+
+
+// Get the state of the card reader
+// Returns string version of state to JS app
+
+- (void)readerState:(CDVInvokedUrlCommand *)command {
+    CFTReaderState state = self.reader.readerState;
+    NSString *stateString = [[NSString alloc]init];
+    
+    switch(state) {
+        case ReaderState_UNKNOWN:
+            stateString = @"UNKNOWN";
+            break;
+        case ReaderState_WAITING_FOR_CONNECT:
+            stateString = @"WAITING_FOR_CONNECT";
+            break;
+        case ReaderState_ATTACHED:
+            stateString = @"ATTACHED";
+            break;
+        case ReaderState_CONNECTED:
+            stateString = @"CONNECTED";
+            break;
+        case ReaderState_WAITING_FOR_DIP:
+            stateString = @"WAITING_FOR_DIP";
+            break;
+        case ReaderState_WAITING_FOR_SWIPE:
+            stateString = @"WAITING_FOR_SWIPE";
+            break;
+        case ReaderState_SWIPE_DETECTED:
+            stateString = @"SWIPE_DETECTED";
+            break;
+        case ReaderState_CARD_INSERTED:
+            stateString = @"CARD_INSERTED";
+            break;
+        case ReaderState_REMOVE_CARD:
+            stateString = @"REMOVE_CARD";
+            break;
+        case ReaderState_NOT_FOUND:
+            stateString = @"NOT_FOUND";
+            break;
+        case ReaderState_DISCONNECTED:
+            stateString = @"DISCONNECTED";
+            break;
+        default:
+            break;
+    }
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:stateString];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
 
