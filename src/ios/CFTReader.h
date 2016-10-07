@@ -230,9 +230,6 @@
  */
 - (void)beginSwipe;
 
-- (void)tokenizeCardWithSuccess:(void(^)(void))success
-          failure:(void(^)(NSError *error))failure;
-
 /*!
  * @brief Set the reader to auto timeout after 20 seconds
  * @param hasTimeout BOOL to set timeout on or off
