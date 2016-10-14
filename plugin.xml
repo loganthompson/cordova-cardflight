@@ -53,9 +53,6 @@
 
     <source-file src="src/android/CDVCardFlight.java" target-dir="src/org/apache/cordova/cardflight" />
 
-    <framework src="src/android/build-extras.gradle" custom="true" type="gradleReference" />
-    <framework src="cardflight-android" custom="true" type="framework" />
-
   </platform>
   
 </plugin>
