@@ -1,6 +1,8 @@
-<?xml version='1.1' encoding='utf-8'?>
-<plugin id="cordova-plugin-cardflight" version="1.1" xmlns="http://apache.org/cordova/ns/plugins/1.1" xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-cardflight" version="1.1.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
   <name>CDVCardFlight</name>
+  <description>CardFlight SDK Plugin</description>
+
   <js-module name="CDVCardFlight" src="www/CDVCardFlight.js">
       <clobbers target="cardflight" />
   </js-module>
@@ -25,7 +27,6 @@
     <header-file src="src/ios/CFTPaymentView.h" />
     <header-file src="src/ios/CFTSessionManager.h" />
     <header-file src="src/ios/CFTAPIResource.h" />
-
     <source-file src="src/ios/CDVCardFlight.m" />
     <source-file src="src/ios/libCardFlightLibrary.a" framework="true" />
     
@@ -40,19 +41,11 @@
   <platform name="android">
     <config-file parent="/*" target="res/xml/config.xml">
       <feature name="CDVCardFlight">
-        <param name="android-package" value="org.apache.cordova.cardflight.CDVCardFlight" />
-        <param name="onload" value="true" />
+        <param name="android-package" value="com.odd.cardflight.CDVCardFlight" />
       </feature>
     </config-file>
-    <config-file target="AndroidManifest.xml" parent="/manifest">
-      <uses-permission android:name="android.permission.INTERNET" />
-      <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-      <uses-permission android:name="android.permission.RECORD_AUDIO" />
-      <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    </config-file>
 
-    <source-file src="src/android/CDVCardFlight.java" target-dir="src/org/apache/cordova/cardflight" />
-
+    <source-file src="src/android/CDVCardFlight.java" target-dir="src/com/odd/cardflight" />
   </platform>
-  
+
 </plugin>

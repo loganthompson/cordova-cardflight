@@ -1,8 +1,6 @@
-package org.apache.cordova.cardflight;
+package com.odd.cardflight;
 
 import android.util.Log;
-
-import org.apache.cordova.CDVCardFlight;
 
 import com.getcardflight.interfaces.CardFlightApiKeyAccountTokenHandler;
 import com.getcardflight.interfaces.CardFlightAuthHandler;
