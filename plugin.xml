@@ -1,51 +1,29 @@
-<?xml version='1.0' encoding='utf-8'?>
-<plugin id="cordova-plugin-cardflight" version="1.1.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
-  <name>CDVCardFlight</name>
-  <description>CardFlight SDK Plugin</description>
+<?xml version="1.0" encoding="utf-8"?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+        id="cordova-plugin-cardflight"
+        version="0.7.0">
 
-  <js-module name="CDVCardFlight" src="www/CDVCardFlight.js">
-      <clobbers target="cardflight" />
+  <name>Hello</name>
+
+  <engines>
+    <engine name="cordova" version=">=3.4.0"/>
+  </engines>
+
+  <asset src="www/CDVCardFlight.js" target="js/CDVCardFlight.js"/>
+
+  <js-module src="www/CDVCardFlight.js" name="CDVCardFlight">
+    <clobbers target="cardflight" />
   </js-module>
 
-  <platform name="ios">
-    <config-file target="config.xml" parent="/*">
-      <feature name="CDVCardFlight">
-        <param name="ios-package" value="CDVCardFlight" />
-      </feature>
-    </config-file>
-
-    <header-file src="src/ios/CDVCardFlight.h" />
-    <header-file src="src/ios/CardFlight.h" />
-    <header-file src="src/ios/CFTReader.h" />
-    <header-file src="src/ios/CFTCard.h" />
-    <header-file src="src/ios/CFTCharge.h" />
-    <header-file src="src/ios/CFTAttacheReader.h" />
-    <header-file src="src/ios/CFTBaseReader.h" />
-    <header-file src="src/ios/CFTCustomEntryTextField.h" />
-    <header-file src="src/ios/CFTCustomView.h" />
-    <header-file src="src/ios/CFTEnum.h" />
-    <header-file src="src/ios/CFTPaymentView.h" />
-    <header-file src="src/ios/CFTSessionManager.h" />
-    <header-file src="src/ios/CFTAPIResource.h" />
-    <source-file src="src/ios/CDVCardFlight.m" />
-    <source-file src="src/ios/libCardFlightLibrary.a" framework="true" />
-    
-    <framework src="AVFoundation.framework" />
-    <framework src="AudioToolbox.framework" />
-    <framework src="MediaPlayer.framework" />
-    <framework src="MessageUI.framework" />
-    <framework src="CoreGraphics.framework" />
-    <framework src="libstdc++.6.0.9.tbd" />
-  </platform>
-
   <platform name="android">
-    <config-file parent="/*" target="res/xml/config.xml">
-      <feature name="CDVCardFlight">
-        <param name="android-package" value="com.odd.cardflight.CDVCardFlight" />
+
+    <config-file target="res/xml/config.xml" parent="/*">
+      <feature name="CardFlight">
+        <param name="android-package" value="com.odd.cardflight.CDVCardFlight"/>
       </feature>
     </config-file>
 
-    <source-file src="src/android/CDVCardFlight.java" target-dir="src/com/odd/cardflight" />
+    <source-file src="src/android/CDVCardFlight.java" target-dir="src/com/odd/cardflight/"/>
   </platform>
 
 </plugin>

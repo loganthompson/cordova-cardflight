@@ -61,6 +61,10 @@ CardFlight.prototype.setApiTokens = function(successCallback, errorCallback, opt
   exec(successCallback, errorCallback, "CDVCardFlight", "setApiTokens", [options]);
 };
 
+CardFlight.prototype.greet = function(successCallback, errorCallback, options) {
+  exec(successCallback, errorCallback, "CardFlight", "greet", [options]);
+};
+
 // Initialize the reader itself separately from setApiTokens
 CardFlight.prototype.initReader = function(successCallback, errorCallback, options) {
   exec(successCallback, errorCallback, "CDVCardFlight", "initReader", [options]);
