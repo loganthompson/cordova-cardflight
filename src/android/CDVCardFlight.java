@@ -1,5 +1,7 @@
 package com.odd.cardflight;
 
+import android.util.Log;
+
 import com.getcardflight.interfaces.CardFlightApiKeyAccountTokenHandler;
 import com.getcardflight.interfaces.CardFlightAuthHandler;
 import com.getcardflight.interfaces.CardFlightCaptureHandler;
@@ -18,6 +20,7 @@ import com.getcardflight.util.PermissionUtils;
 import com.getcardflight.views.PaymentView;
 
 import org.apache.cordova.*;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
@@ -26,19 +29,12 @@ public class CDVCardFlight extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray inputs, CallbackContext callbackContext) throws JSONException {
-
         if (action.equals("setApiTokens")) {
-
             JSONObject options = inputs.optJSONObject(0);
-            String message = "Still working";
             setApiTokens(options, callbackContext);
-
             return true;
-
         } else {
-            
             return false;
-
         }
     }
 
@@ -48,7 +44,7 @@ public class CDVCardFlight extends CordovaPlugin {
         String accountToken = options.has("accountToken") ? options.optString("accountToken") : null;
         String readerType = options.has("readerType") ? options.optString("readerType") : null;
 
-        CardFlight.getInstance();
+        CardFlight.getInstance().setApiTokenAndAccountToken(apiKey, accountToken, null);
 
         callbackContext.success();
     }
