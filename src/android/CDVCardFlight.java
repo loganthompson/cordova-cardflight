@@ -56,6 +56,45 @@ public class CDVCardFlight extends CordovaPlugin {
         } else if (action.equals("accountToken")) {
             accountToken(callbackContext);
             return true;
+        } else if (action.equals("registerOnReaderResponse")) {
+            registerOnReaderResponse(callbackContext);
+            return true;
+        } else if (action.equals("registerOnEMVMessage")) {
+            registerOnEMVMessage(callbackContext);
+            return true;
+        } else if (action.equals("registerOnEMVCardDipped")) {
+            registerOnEMVCardDipped(callbackContext);
+            return true;
+        } else if (action.equals("registerOnCardSwiped")) {
+            registerOnCardSwiped(callbackContext);
+            return true;
+        } else if (action.equals("registerOnEMVCardRemoved")) {
+            registerOnEMVCardRemoved(callbackContext);
+            return true;
+        } else if (action.equals("registerOnReaderAttached")) {
+            registerOnReaderAttached(callbackContext);
+            return true;
+        } else if (action.equals("registerOnReaderDisconnected")) {
+            registerOnReaderDisconnected(callbackContext);
+            return true;
+        } else if (action.equals("registerOnReaderNotDetected")) {
+            registerOnReaderNotDetected(callbackContext);
+            return true;
+        } else if (action.equals("registerOnReaderConnected")) {
+            registerOnReaderConnected(callbackContext);
+            return true;
+        } else if (action.equals("registerOnReaderConnecting")) {
+            registerOnReaderConnecting(callbackContext);
+            return true;
+        } else if (action.equals("registerOnTransactionResult")) {
+            registerOnTransactionResult(callbackContext);
+            return true;
+        } else if (action.equals("registerOnTokenizeCard")) {
+            registerOnTokenizeCard(callbackContext);
+            return true;
+        } else if (action.equals("registerOnLowBattery")) {
+            registerOnLowBattery(callbackContext);
+            return true;
         } else {
             return false;
         }
