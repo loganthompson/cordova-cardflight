@@ -49,8 +49,12 @@ CardFlight.prototype.initialize = function() {
   }, errorCallback);
   this.registerOnReaderConnected(function(){
     CFCONNECTED = true;
+    window.alert('register connected');
     cordova.fireDocumentEvent('CFReaderPlugged');
-  }, errorCallback);
+  }, function(){
+      window.alert('register connected error');
+    }
+  );
 
   channel.onCordovaCardFlightReady.fire();
 }

@@ -27,19 +27,19 @@ import org.json.JSONException;
 
 public class CDVCardFlight extends CordovaPlugin {
 
-    private static CallbackContext onLowBatteryCallbackId;
-    private static CallbackContext onReaderResponseCallbackId;
-    private static CallbackContext onReaderAttachedCallbackId;
-    private static CallbackContext onReaderConnectedCallbackId;
-    private static CallbackContext onReaderDisconnectedCallbackId;
-    private static CallbackContext onReaderNotDetectedCallbackId;
-    private static CallbackContext onReaderConnectingCallbackId;
-    private static CallbackContext onCardSwipedCallbackId;
-    private static CallbackContext onEMVMessageCallbackId;
-    private static CallbackContext onEMVCardDippedCallbackId;
-    private static CallbackContext onEMVCardRemovedCallbackId;
-    private static CallbackContext onTransactionResultCallbackId;
-    private static CallbackContext onTokenizeCardCallbackId;
+    private CallbackContext onLowBatteryCallbackId;
+    private CallbackContext onReaderResponseCallbackId;
+    private CallbackContext onReaderAttachedCallbackId = null;
+    private CallbackContext onReaderConnectedCallbackId = null;
+    private CallbackContext onReaderDisconnectedCallbackId;
+    private CallbackContext onReaderNotDetectedCallbackId;
+    private CallbackContext onReaderConnectingCallbackId;
+    private CallbackContext onCardSwipedCallbackId;
+    private CallbackContext onEMVMessageCallbackId;
+    private CallbackContext onEMVCardDippedCallbackId;
+    private CallbackContext onEMVCardRemovedCallbackId;
+    private CallbackContext onTransactionResultCallbackId;
+    private CallbackContext onTokenizeCardCallbackId;
 
     @Override
     public boolean execute(String action, JSONArray inputs, CallbackContext callbackContext) throws JSONException {
@@ -100,6 +100,13 @@ public class CDVCardFlight extends CordovaPlugin {
         }
     }
 
+    // Get the state of the card reader
+    // Returns string version of state to JS app
+
+    private void readerState(final CallbackContext callbackContext) {
+        
+    }
+
     private void setApiTokens(JSONObject options, final CallbackContext callbackContext) {
 
         String apiKey = options.has("apiKey") ? options.optString("apiKey") : null;
@@ -107,6 +114,7 @@ public class CDVCardFlight extends CordovaPlugin {
         String readerType = options.has("readerType") ? options.optString("readerType") : null;
 
         CardFlight.getInstance().setApiTokenAndAccountToken(apiKey, accountToken, null);
+        Reader.setPreferredReader();
 
         callbackContext.success();
 
@@ -128,6 +136,26 @@ public class CDVCardFlight extends CordovaPlugin {
     private void accountToken(final CallbackContext callbackContext) {
         String accountToken = CardFlight.getInstance().getAccountToken();
         callbackContext.success(accountToken);
+    }
+
+    // Callback fired when reader is attached
+    // Sends plugin data via onReaderConnectedCallbackId
+    private void readerIsAttached() {
+        PluginResult pluginResult;
+        pluginResult = new PluginResult(PluginResult.Status.OK);
+        pluginResult.setKeepCallback(true);
+        this.onReaderAttachedCallbackId.sendPluginResult(pluginResult);
+    }
+
+    private void readerIsConnected(boolean isConnected, CardFlightError error) {
+        PluginResult pluginResult;
+        if (isConnected) {
+            pluginResult = new PluginResult(PluginResult.Status.OK);
+        } else {
+            pluginResult = new PluginResult(PluginResult.Status.ERROR);
+        }
+        pluginResult.setKeepCallback(true);
+        this.onReaderConnectedCallbackId.sendPluginResult(pluginResult);
     }
 
     // Set callback ID to be a listener, reusable by the plugin.
@@ -163,7 +191,7 @@ public class CDVCardFlight extends CordovaPlugin {
     // Set callback ID to be a listener, reusable by the plugin.
     // After this is set, onReaderAttached will send results to onReaderAttachedCallbackId
     private void registerOnReaderAttached(final CallbackContext callbackContext) {
-        onReaderAttachedCallbackId = callbackContext;
+        this.onReaderAttachedCallbackId = callbackContext;
     }
 
     // Set callback ID to be a listener, reusable by the plugin.
@@ -180,8 +208,8 @@ public class CDVCardFlight extends CordovaPlugin {
 
     // Set callback ID to be a listener, reusable by the plugin.
     // After this is set, onReaderConnected will send results to onReaderConnectedCallbackId
-    private void registerOnReaderConnected(final CallbackContext callbackContext) {
-        onReaderConnectedCallbackId = callbackContext;
+    private void registerOnReaderConnected(CallbackContext callbackContext) {
+        this.onReaderConnectedCallbackId = callbackContext;
     }
 
     // Set callback ID to be a listener, reusable by the plugin.
