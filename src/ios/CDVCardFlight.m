@@ -84,6 +84,14 @@
 }
 
 
+// Get last connected reader type
+
+- (void)readerType:(CDVInvokedUrlCommand *)command {
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsNSUInteger:[self.reader readerType]];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+
 // Trigger keyed entry payment view. Will show a little more than 1/4 down on screen.
 // Enable zip by passing optional {zip:true}. Default bool value = NO
 

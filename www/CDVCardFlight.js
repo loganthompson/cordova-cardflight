@@ -124,6 +124,10 @@ CardFlight.prototype.refundCharge = function(successCallback, errorCallback, opt
   exec(successCallback, errorCallback, "CDVCardFlight", "refundCharge", [options]);
 };
 
+CardFlight.prototype.readerType = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CDVCardFlight", "readerType", []);
+};
+
 // Returns readerState as a string
 // e.g. "WAITING_FOR_CONNECT", "REMOVE_CARD"
 CardFlight.prototype.readerState = function(successCallback, errorCallback) {
