@@ -392,7 +392,9 @@
         __weak CDVCardFlight *weakSelf = self;
         [_card chargeCardWithParameters:chargeDict success:^(CFTCharge *charge) {
             NSLog(@"success");
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+            NSDictionary *resp = [NSDictionary dictionaryWithObjectsAndKeys:
+                                  [charge valueForKey:@"referenceID"], @"referenceID", nil];
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:resp];
             [result setKeepCallbackAsBool:TRUE];
             [weakSelf.commandDelegate sendPluginResult:result callbackId:weakSelf.onTransactionResultCallbackId];
         } failure:^(NSError *error) {
