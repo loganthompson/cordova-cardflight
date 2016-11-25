@@ -49,7 +49,6 @@ CardFlight.prototype.initialize = function() {
   }, errorCallback);
   this.registerOnReaderConnected(function(){
     CFCONNECTED = true;
-    window.alert('register connected');
     cordova.fireDocumentEvent('CFReaderPlugged');
   }, function(){
       window.alert('register connected error');
@@ -134,14 +133,17 @@ CardFlight.prototype.readerState = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CardFlight", "readerState", []);
 };
 
+// Returns CardFlight SDK version
 CardFlight.prototype.SDKVersion = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CardFlight", "SDKVersion", []);
 };
 
+// Returns current CardFlight API Token
 CardFlight.prototype.apiToken = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CardFlight", "apiToken", []);
 };
 
+// Returns current CardFlight account Token
 CardFlight.prototype.accountToken = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CardFlight", "accountToken", []);
 };

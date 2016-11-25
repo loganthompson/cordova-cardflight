@@ -84,6 +84,14 @@
 }
 
 
+// Get last connected reader type
+
+- (void)readerType:(CDVInvokedUrlCommand *)command {
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsNSUInteger:[self.reader readerType]];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+
 // Trigger keyed entry payment view. Will show a little more than 1/4 down on screen.
 // Enable zip by passing optional {zip:true}. Default bool value = NO
 
@@ -384,7 +392,9 @@
         __weak CDVCardFlight *weakSelf = self;
         [_card chargeCardWithParameters:chargeDict success:^(CFTCharge *charge) {
             NSLog(@"success");
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+            NSDictionary *resp = [NSDictionary dictionaryWithObjectsAndKeys:
+                                  [charge valueForKey:@"referenceID"], @"referenceID", nil];
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:resp];
             [result setKeepCallbackAsBool:TRUE];
             [weakSelf.commandDelegate sendPluginResult:result callbackId:weakSelf.onTransactionResultCallbackId];
         } failure:^(NSError *error) {
@@ -405,7 +415,11 @@
         result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
         NSLog(@"%@", error.localizedDescription);
     } else if (charge) {
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:signature];
+        NSDictionary *resp = [NSDictionary dictionaryWithObjectsAndKeys:
+                              [charge valueForKey:@"referenceID"], @"referenceID",
+                              @(signature), @"signature", nil];
+        
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:resp];
         NSLog(@"Charge success");
     }
     
@@ -462,7 +476,7 @@
 // Sends plugin data via onReaderAttachedCallbackId
 
 - (void)readerIsAttached {
-    NSLog(@"CallbackId %@", self.onReaderAttachedCallbackId);
+    NSLog(@"Attached %@", self.onReaderAttachedCallbackId);
     // fire corresponding callback id for onReaderAttached
     if (self.onReaderAttachedCallbackId) {
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
@@ -490,7 +504,7 @@
 // Sends plugin data via onReaderConnectingCallbackId
 
 - (void)readerIsConnecting {
-    NSLog(@"CallbackId %@", self.onReaderConnectingCallbackId);
+    NSLog(@"Connecting %@", self.onReaderConnectingCallbackId);
     if (self.onReaderConnectingCallbackId) {
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:result callbackId:self.onReaderConnectingCallbackId];
@@ -545,7 +559,7 @@
 
 
 // Select application if multiples are available
-// Currently sets to first option (default in U.S. – must alter this for international use)
+// Currently sets to first option (default in U.S. â€“ must alter this for international use)
 
 - (void)emvApplicationSelection:(NSArray *)applicationArray {
     [self.reader emvSelectApplication:0];
