@@ -215,10 +215,23 @@ public class CDVCardFlight extends CordovaPlugin {
     public void readerType(final CallbackContext callbackContext) {
         Context context = this.cordova.getActivity().getApplicationContext();
         ReaderType currentType = ReaderType.values()[Reader.getDefault(context).getReaderType()];
+        int typeInt = 0;
+
         if (preferredReader != currentType) {
             preferredReader = currentType;
         }
-        callbackContext.success(String.valueOf(currentType));
+        
+        // Set to int to match iOS
+        switch (currentType) {
+            case A100_READER:
+                typeInt = 2;
+                break;
+            case A200_READER:
+                typeInt = 3;
+                break;
+        }
+        
+        callbackContext.success(typeInt);
     }
 
     // Prepare the reader for a swipe
@@ -584,10 +597,6 @@ public class CDVCardFlight extends CordovaPlugin {
             } else {
                 Log.d(TAG, "connect error");
                 pluginResult = new PluginResult(PluginResult.Status.ERROR);
-            }
-
-            if (isConnected == false) {
-                Log.d(TAG, "connect error – !isConnected");
             }
             
             pluginResult.setKeepCallback(true);
