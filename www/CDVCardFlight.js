@@ -127,6 +127,11 @@ CardFlight.prototype.refundCharge = function(successCallback, errorCallback, opt
   exec(successCallback, errorCallback, "CardFlight", "refundCharge", [options]);
 };
 
+// Returns readerType
+CardFlight.prototype.readerType = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CardFlight", "readerType", []);
+};
+
 // Returns readerState as a string
 // e.g. "WAITING_FOR_CONNECT", "REMOVE_CARD"
 CardFlight.prototype.readerState = function(successCallback, errorCallback) {

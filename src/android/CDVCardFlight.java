@@ -1,11 +1,14 @@
 package com.odd.cardflight;
 
+import android.Manifest;
 import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import android.widget.FrameLayout;
 import android.content.Context;
 import android.app.AlertDialog;
+import android.view.View;
 import android.content.DialogInterface;
 import android.bluetooth.BluetoothDevice;
 
@@ -49,11 +52,15 @@ public class CDVCardFlight extends CordovaPlugin {
         UNKNOWN
     }
 
+    private static final String TAG = "FROM COLLECT FOR STRIPE: ";
+
     public CallbackContext onLowBatteryCallbackId;
-    public CallbackContext onReaderResponseCallbackId;
     public CallbackContext onReaderDisconnectedCallbackId;
     public CallbackContext onReaderNotDetectedCallbackId;
+    public CallbackContext onReaderAttachedCallbackId;
+    public CallbackContext onReaderConnectedCallbackId;
     public CallbackContext onReaderConnectingCallbackId;
+    public CallbackContext onReaderResponseCallbackId;
     public CallbackContext onCardSwipedCallbackId;
     public CallbackContext onEMVMessageCallbackId;
     public CallbackContext onEMVCardDippedCallbackId;
@@ -61,15 +68,19 @@ public class CDVCardFlight extends CordovaPlugin {
     public CallbackContext onTransactionResultCallbackId;
     public CallbackContext onTokenizeCardCallbackId;
 
-    public String readerState = "DISCONNECTED";
-    public CFDeviceHandler deviceHandler = new CFDeviceHandler();
+    private Card mCard = null;
+    // private Charge mCharge = null;
+    private PaymentView mPaymentView;
 
-    private static final String TAG = "FROM COLLECT FOR STRIPE: ";
+    public String readerState = "DISCONNECTED";
+    public ReaderType preferredReader = null;
+    public CFDeviceHandler deviceHandler = new CFDeviceHandler();
 
     @Override
     public boolean execute(String action, JSONArray inputs, CallbackContext callbackContext) throws JSONException {
+        JSONObject options = inputs.optJSONObject(0);
+
         if (action.equals("setApiTokens")) {
-            JSONObject options = inputs.optJSONObject(0);
             setApiTokens(options, callbackContext);
             return true;
         } else if (action.equals("SDKVersion")) {
@@ -78,70 +89,236 @@ public class CDVCardFlight extends CordovaPlugin {
         } else if (action.equals("apiToken")) {
             apiToken(callbackContext);
             return true;
+        } else if (action.equals("initReader")) {
+            initReader(callbackContext);
+            return true;
         } else if (action.equals("accountToken")) {
             accountToken(callbackContext);
             return true;
         } else if (action.equals("readerState")) {
             readerState(callbackContext);
             return true;
+        } else if (action.equals("readerType")) {
+            readerType(callbackContext);
+            return true;
+        } else if (action.equals("beginSwipe")) {
+            beginSwipe(callbackContext);
+            return true;
+        } else if (action.equals("beginKeyed")) {
+            // beginKeyed(callbackContext);
+            return true;
+        } else if (action.equals("cancelTransaction")) {
+            cancelTransaction(callbackContext);
+            return true;
+        } else if (action.equals("processCharge")) {
+            processCharge(options);
+            return true;
         } else if (action.equals("registerOnReaderResponse")) {
-            // registerOnReaderResponse(callbackContext);
+            registerOnReaderResponse(callbackContext);
             return true;
         } else if (action.equals("registerOnEMVMessage")) {
-            // registerOnEMVMessage(callbackContext);
+            registerOnEMVMessage(callbackContext);
             return true;
         } else if (action.equals("registerOnEMVCardDipped")) {
             // registerOnEMVCardDipped(callbackContext);
             return true;
         } else if (action.equals("registerOnCardSwiped")) {
-            // registerOnCardSwiped(callbackContext);
+            registerOnCardSwiped(callbackContext);
             return true;
         } else if (action.equals("registerOnEMVCardRemoved")) {
             // registerOnEMVCardRemoved(callbackContext);
             return true;
         } else if (action.equals("registerOnReaderAttached")) {
-            deviceHandler.registerOnReaderAttached(callbackContext);
+            registerOnReaderAttached(callbackContext);
             return true;
         } else if (action.equals("registerOnReaderDisconnected")) {
-            // registerOnReaderDisconnected(callbackContext);
+            registerOnReaderDisconnected(callbackContext);
             return true;
         } else if (action.equals("registerOnReaderNotDetected")) {
             // registerOnReaderNotDetected(callbackContext);
             return true;
         } else if (action.equals("registerOnReaderConnected")) {
-            deviceHandler.registerOnReaderConnected(callbackContext);
+            registerOnReaderConnected(callbackContext);
             return true;
         } else if (action.equals("registerOnReaderConnecting")) {
-            // registerOnReaderConnecting(callbackContext);
+            registerOnReaderConnecting(callbackContext);
             return true;
         } else if (action.equals("registerOnTransactionResult")) {
-            // registerOnTransactionResult(callbackContext);
+            registerOnTransactionResult(callbackContext);
             return true;
         } else if (action.equals("registerOnTokenizeCard")) {
             // registerOnTokenizeCard(callbackContext);
             return true;
         } else if (action.equals("registerOnLowBattery")) {
-            // registerOnLowBattery(callbackContext);
+            registerOnLowBattery(callbackContext);
             return true;
         } else {
             return false;
         }
     }
 
+    private void cancelTransaction(final CallbackContext callbackContext) {
+        mCard = null;
+        // mCharge = null;
+        onEMVMessageCallbackId = null;
+        onReaderResponseCallbackId = null;
+
+        callbackContext.success();
+    }
+
     private void setApiTokens(JSONObject options, final CallbackContext callbackContext) {
+        Context context = this.cordova.getActivity().getApplicationContext();
         String apiKey = options.has("apiKey") ? options.optString("apiKey") : null;
         String accountToken = options.has("accountToken") ? options.optString("accountToken") : null;
-        String readerType = options.has("readerType") ? options.optString("readerType") : null;
+        int givenType = options.optInt("readerType");
 
-        Context context = this.cordova.getActivity().getApplicationContext();
+        Log.d(TAG, String.valueOf(givenType));
 
         CardFlight.getInstance()
             .setApiTokenAndAccountToken(apiKey, accountToken, null);
+
+        if (givenType != 0) {
+            switch (givenType) {
+                case 2:
+                    preferredReader = ReaderType.A100_READER;
+                    break;
+                case 3:
+                    preferredReader = ReaderType.A200_READER;
+                    break;
+            }
+        }
+
         Reader.getDefault(context)
-            .setPreferredReader(ReaderType.A100_READER)
             .setDeviceHandler(deviceHandler);
 
+        if (preferredReader != null) {
+            Reader.getDefault(context).setPreferredReader(preferredReader);   
+        }
+
         callbackContext.success();
+    }
+
+    public void initReader(final CallbackContext callbackContext) {
+        Log.d(TAG, "init reader");
+        Context context = this.cordova.getActivity().getApplicationContext();
+        Reader.getDefault(context)
+            .setPreferredReader(preferredReader)
+            .setDeviceHandler(deviceHandler);
+
+        if (callbackContext != null) {
+            callbackContext.success();   
+        }
+    }
+
+    // Return 'preferredReader', which is 
+    // the current readerType
+    public void readerType(final CallbackContext callbackContext) {
+        Context context = this.cordova.getActivity().getApplicationContext();
+        ReaderType currentType = ReaderType.values()[Reader.getDefault(context).getReaderType()];
+        if (preferredReader != currentType) {
+            preferredReader = currentType;
+        }
+        callbackContext.success(String.valueOf(currentType));
+    }
+
+    // Prepare the reader for a swipe
+    private void beginSwipe(final CallbackContext callbackContext) {
+        Log.d(TAG, "Begin swipe!");
+        
+        Context context = this.cordova.getActivity().getApplicationContext();
+        UpdateReaderStatus(ReaderStatus.WAITING_FOR_SWIPE);
+
+        Reader.getDefault(context).swipeHasTimeout(false).beginSwipe();
+
+        callbackContext.success();
+    }
+
+    // Trigger keyed entry payment view. Will show a little more than 1/4 down on screen.
+    // Enable zip by passing optional {zip:true}. Default bool value = NO
+    private void beginKeyed(final CallbackContext callbackContext) {
+        Log.d(TAG, "Begin keyed!");
+
+        FrameLayout layout = (FrameLayout) webView.getView().getParent();
+
+        PaymentView paymentView = new PaymentView(layout.getContext());
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(500, 500);
+        params.setMargins(100, 100, 100, 100);
+        paymentView.setLayoutParams(params);
+        layout.addView(paymentView);
+
+        paymentView.setVisibility(View.VISIBLE);
+
+        paymentView.bringToFront();
+        
+        callbackContext.success();
+    }
+
+    // Required arguments: amount, type ('emv', 'swipe' or 'keyed')
+    // Optional argument: description
+
+    public void processCharge(JSONObject options) {
+        Context context = this.cordova.getActivity().getApplicationContext();
+
+        // Get options and create metadata
+        String type = options.optString("type");
+        String currency = options.optString("currency");
+        String stripeAccount = options.optString("stripeAccount");
+        String amountString = options.optString("amount").replaceAll("[.]", "");
+        String appFeeString = options.optString("applicationFee").replaceAll("[.]", "");
+        int amount = Integer.valueOf(amountString);
+        int appFee = Integer.valueOf(appFeeString);
+
+        JSONObject metadata = new JSONObject();
+        if (stripeAccount != "") {
+            try {
+                metadata.put("application_fee", appFee);
+                metadata.put("connected_stripe_account_id", stripeAccount);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }   
+        }
+
+        HashMap <String, Object> chargeDetailsHash = new HashMap<String, Object>();
+        chargeDetailsHash.put(Constants.REQUEST_KEY_AMOUNT, amount);
+        chargeDetailsHash.put(Constants.REQUEST_KEY_META_DATA, metadata);
+
+        Log.d(TAG, currency);
+        Log.d(TAG, type);
+
+        // Swipe
+        if (mCard != null) {
+            Log.d(TAG, "GOT A CARD");
+            mCard.chargeCard(
+                    context,
+                    chargeDetailsHash,
+                    new CardFlightPaymentHandler() {
+                        @Override
+                        public void transactionSuccessful(Charge charge) {
+                            JSONObject resp = new JSONObject();
+                            try {
+                                resp.put("referenceID", charge.getReferenceId());
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }   
+                            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, resp);
+                            pluginResult.setKeepCallback(true);
+                            onTransactionResultCallbackId.sendPluginResult(pluginResult);
+                        }
+
+                        @Override
+                        public void transactionFailed(CardFlightError error) {
+                            Log.e(TAG, "error: " + error.toString());
+                            PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR);
+                            pluginResult.setKeepCallback(true);
+                            onTransactionResultCallbackId.sendPluginResult(pluginResult);
+                        }
+                    }
+            );
+        } else {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR);
+            pluginResult.setKeepCallback(true);
+            onTransactionResultCallbackId.sendPluginResult(pluginResult);
+        }
     }
 
     // Get the current SDK Version
@@ -194,18 +371,93 @@ public class CDVCardFlight extends CordovaPlugin {
         }
     }
 
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onReaderAttached will send results to onReaderAttachedCallbackId
+    public void registerOnReaderAttached(final CallbackContext callbackContext) {
+        Log.d(TAG, "register onReaderAttached!");
+        onReaderAttachedCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onReaderConnected will send results to onReaderConnectedCallbackId
+    public void registerOnReaderConnected(final CallbackContext callbackContext) {
+        Log.d(TAG, "register onReaderConnected!");
+        onReaderConnectedCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onReaderResponse will send results to onReaderResponseCallbackId
+    public void registerOnReaderResponse(final CallbackContext callbackContext) {
+        onReaderResponseCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onEMVMessage will send results to onEMVMessageCallbackId
+    public void registerOnEMVMessage(final CallbackContext callbackContext) {
+        onEMVMessageCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onEMVCardDipped will send results to onEMVCardDippedCallbackId
+    public void registerOnEMVCardDipped(final CallbackContext callbackContext) {
+        onEMVCardDippedCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onCardSwiped will send results to onCardSwipedCallbackId
+    public void registerOnCardSwiped(final CallbackContext callbackContext) {
+        onCardSwipedCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onEMVCardRemoved will send results to onEMVCardRemovedCallbackId
+    public void registerOnEMVCardRemoved(final CallbackContext callbackContext) {
+        onEMVCardRemovedCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onTransactionResult will send results to onTransactionResultCallbackId
+    public void registerOnTransactionResult(final CallbackContext callbackContext) {
+        onTransactionResultCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onReaderDisconnected will send results to onReaderDisconnectedCallbackId
+    public void registerOnReaderDisconnected(final CallbackContext callbackContext) {
+        onReaderDisconnectedCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onReaderNotDetected will send results to onReaderNotDetectedCallbackId
+    public void registerOnReaderNotDetected(final CallbackContext callbackContext) {
+        onReaderNotDetectedCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onReaderConnecting will send results to onReaderConnectingCallbackId
+    public void registerOnReaderConnecting(final CallbackContext callbackContext) {
+        onReaderConnectingCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onTokenizeCard will send results to onTokenizeCardCallbackId
+    public void registerOnTokenizeCard(final CallbackContext callbackContext) {
+        onTokenizeCardCallbackId = callbackContext;
+    }
+
+    // Set callback ID to be a listener, reusable by the plugin.
+    // After this is set, onLowBattery will send results to onLowBatteryCallbackId
+    public void registerOnLowBattery(final CallbackContext callbackContext) {
+        onLowBatteryCallbackId = callbackContext;
+    }
 
     // Device handler, sends messages from reader to the app
 
     public class CFDeviceHandler implements CardFlightDeviceHandler {
 
-        private static final String TAG = "FROM COLLECT FOR STRIPE: ";
-
-        public CallbackContext onReaderAttachedCallbackId;
-        public CallbackContext onReaderConnectedCallbackId;
-
         public CFDeviceHandler() {
-            Log.d(TAG, "Init the thing");
+            // Log.d(TAG, "Init the thing");
+            // requestMicrophoneAccess();
         }
 
         @Override
@@ -216,7 +468,6 @@ public class CDVCardFlight extends CordovaPlugin {
         @Override
         public void emvRequestApplicationSelection(ArrayList appList) {
             
-
             // Implement method to select which AID,
             // then call - Reader.getDefault(mContext).emvSelectApplication(aidIndex);
         }
@@ -231,8 +482,7 @@ public class CDVCardFlight extends CordovaPlugin {
             String cardType = (String) hashMap.get(Constants.CARD_TYPE);
             String firstSix = (String) hashMap.get(Constants.FIRST_SIX);
             String lastFour = (String) hashMap.get(Constants.LAST_FOUR);
-
-            
+   
         }
 
         @Override
@@ -267,10 +517,28 @@ public class CDVCardFlight extends CordovaPlugin {
 
         @Override
         public void readerCardResponse(Card card, CardFlightError error) {
+            PluginResult pluginResult;
+
             if (error == null) {
-             
+                Log.d(TAG, "Got a card!");
+                mCard = card;
+                JSONObject cardObject = new JSONObject();
+                try {
+                    cardObject.put("type", "swipe");
+                    cardObject.put("name", card.getName());
+                    cardObject.put("last4", card.getLast4());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                pluginResult = new PluginResult(PluginResult.Status.OK, cardObject);
             } else {
-             
+                mCard = null;
+                pluginResult = new PluginResult(PluginResult.Status.ERROR, error.toString());
+            }
+
+            if (onReaderResponseCallbackId != null) {
+                pluginResult.setKeepCallback(true);
+                onReaderResponseCallbackId.sendPluginResult(pluginResult);   
             }
         }
 
@@ -278,6 +546,18 @@ public class CDVCardFlight extends CordovaPlugin {
         public void readerIsAttached() {
             // Deprecated - This method is a duplicate of readerIsConnecting as of version 3.1 and will be
             // removed in a future release
+            Log.d(TAG, "Reader attached!");
+            UpdateReaderStatus(ReaderStatus.ATTACHED);
+
+            PluginResult pluginResult;
+            pluginResult = new PluginResult(PluginResult.Status.OK);
+            pluginResult.setKeepCallback(true);
+            onReaderAttachedCallbackId.sendPluginResult(pluginResult);
+        }
+        @Deprecated
+
+        @Override
+        public void readerIsConnecting() {
             Log.d(TAG, "Reader connecting!");
             UpdateReaderStatus(ReaderStatus.ATTACHED);
 
@@ -287,15 +567,9 @@ public class CDVCardFlight extends CordovaPlugin {
             onReaderAttachedCallbackId.sendPluginResult(pluginResult);
         }
 
-        @Deprecated
-        @Override
-        public void readerIsConnecting() {
-            Log.d(TAG, "Reader connecting!");
-        }
-
         @Override
         public void readerIsUpdating() {
-            
+               
         }
 
         @Override
@@ -308,7 +582,12 @@ public class CDVCardFlight extends CordovaPlugin {
             if (error == null) {
                 pluginResult = new PluginResult(PluginResult.Status.OK);
             } else {
+                Log.d(TAG, "connect error");
                 pluginResult = new PluginResult(PluginResult.Status.ERROR);
+            }
+
+            if (isConnected == false) {
+                Log.d(TAG, "connect error – !isConnected");
             }
             
             pluginResult.setKeepCallback(true);
@@ -317,12 +596,17 @@ public class CDVCardFlight extends CordovaPlugin {
 
         @Override
         public void readerSwipeDetected() {
-            Log.d(TAG, "Swipe!");
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+            pluginResult.setKeepCallback(true);
+            onCardSwipedCallbackId.sendPluginResult(pluginResult);
         }
 
         @Override
         public void readerIsDisconnected() {
-        
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+            UpdateReaderStatus(ReaderStatus.DISCONNECTED);
+            pluginResult.setKeepCallback(true);
+            onReaderDisconnectedCallbackId.sendPluginResult(pluginResult);
         }
 
         @Override
@@ -339,86 +623,5 @@ public class CDVCardFlight extends CordovaPlugin {
         public void selectBluetoothDevice(ArrayList<BluetoothDevice> arrayList) {
             
         }
-
-        // Set callback ID to be a listener, reusable by the plugin.
-        // After this is set, onReaderAttached will send results to onReaderAttachedCallbackId
-        public void registerOnReaderAttached(final CallbackContext callbackContext) {
-            Log.d(TAG, "register onReaderAttached!");
-            onReaderAttachedCallbackId = callbackContext;
-        }
-
-        // Set callback ID to be a listener, reusable by the plugin.
-        // After this is set, onReaderConnected will send results to onReaderConnectedCallbackId
-        public void registerOnReaderConnected(final CallbackContext callbackContext) {
-            Log.d(TAG, "register onReaderConnected!");
-            onReaderConnectedCallbackId = callbackContext;
-        }
     }
-
-    // Set callback ID to be a listener, reusable by the plugin.
-    // After this is set, onReaderResponse will send results to onReaderResponseCallbackId
-    // public void registerOnReaderResponse(final CallbackContext callbackContext) {
-    //     onReaderResponseCallbackId = callbackContext;
-    // }
-
-    // // Set callback ID to be a listener, reusable by the plugin.
-    // // After this is set, onEMVMessage will send results to onEMVMessageCallbackId
-    // public void registerOnEMVMessage(final CallbackContext callbackContext) {
-    //     onEMVMessageCallbackId = callbackContext;
-    // }
-
-    // // Set callback ID to be a listener, reusable by the plugin.
-    // // After this is set, onEMVCardDipped will send results to onEMVCardDippedCallbackId
-    // public void registerOnEMVCardDipped(final CallbackContext callbackContext) {
-    //     onEMVCardDippedCallbackId = callbackContext;
-    // }
-
-    // // Set callback ID to be a listener, reusable by the plugin.
-    // // After this is set, onCardSwiped will send results to onCardSwipedCallbackId
-    // public void registerOnCardSwiped(final CallbackContext callbackContext) {
-    //     onCardSwipedCallbackId = callbackContext;
-    // }
-
-    // // Set callback ID to be a listener, reusable by the plugin.
-    // // After this is set, onEMVCardRemoved will send results to onEMVCardRemovedCallbackId
-    // public void registerOnEMVCardRemoved(final CallbackContext callbackContext) {
-    //     onEMVCardRemovedCallbackId = callbackContext;
-    // }
-
-    // // Set callback ID to be a listener, reusable by the plugin.
-    // // After this is set, onReaderDisconnected will send results to onReaderDisconnectedCallbackId
-    // public void registerOnReaderDisconnected(final CallbackContext callbackContext) {
-    //     onReaderDisconnectedCallbackId = callbackContext;
-    // }
-
-    // // Set callback ID to be a listener, reusable by the plugin.
-    // // After this is set, onReaderNotDetected will send results to onReaderNotDetectedCallbackId
-    // public void registerOnReaderNotDetected(final CallbackContext callbackContext) {
-    //     onReaderNotDetectedCallbackId = callbackContext;
-    // }
-
-    // // Set callback ID to be a listener, reusable by the plugin.
-    // // After this is set, onReaderConnecting will send results to onReaderConnectingCallbackId
-    // public void registerOnReaderConnecting(final CallbackContext callbackContext) {
-    //     onReaderConnectingCallbackId = callbackContext;
-    // }
-
-    // // Set callback ID to be a listener, reusable by the plugin.
-    // // After this is set, onTransactionResult will send results to onTransactionResultCallbackId
-    // public void registerOnTransactionResult(final CallbackContext callbackContext) {
-    //     onTransactionResultCallbackId = callbackContext;
-    // }
-
-    // // Set callback ID to be a listener, reusable by the plugin.
-    // // After this is set, onTokenizeCard will send results to onTokenizeCardCallbackId
-    // public void registerOnTokenizeCard(final CallbackContext callbackContext) {
-    //     onTokenizeCardCallbackId = callbackContext;
-    // }
-
-    // // Set callback ID to be a listener, reusable by the plugin.
-    // // After this is set, onLowBattery will send results to onLowBatteryCallbackId
-    // public void registerOnLowBattery(final CallbackContext callbackContext) {
-    //     onLowBatteryCallbackId = callbackContext;
-    // }
-
 }
