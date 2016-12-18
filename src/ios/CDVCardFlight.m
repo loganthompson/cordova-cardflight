@@ -240,12 +240,18 @@
     NSDecimalNumber *amount = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"amount"]];
     NSNumber *appFee = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"applicationFee"]];
     NSString *currency = [options valueForKey:@"currency"];
+    NSString *platform = [options valueForKey:@"platform"];
     NSDictionary *metadata;
     
     if ([options valueForKey:@"stripeAccount"] != (id)[NSNull null]) {
         metadata = [NSDictionary dictionaryWithObjectsAndKeys:
                     appFee, @"application_fee",
+                    platform, @"s-platform",
                     [options valueForKey:@"stripeAccount"], @"connected_stripe_account_id", nil];
+    } else {
+        metadata = [NSDictionary dictionaryWithObjectsAndKeys:
+                    appFee, @"application_fee",
+                    platform, @"s-platform", nil];
     }
     
     NSDictionary *chargeDict = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -367,6 +373,7 @@
     NSDictionary *options = [command.arguments objectAtIndex:0];
     NSString *type = [options valueForKey:@"type"];
     NSString *currency = [options valueForKey:@"currency"];
+    NSString *platform = [options valueForKey:@"platform"];
     NSDecimalNumber *amount = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"amount"]];
     
     if ([type isEqualToString: @"emv"]) {
@@ -378,9 +385,12 @@
         if ([options valueForKey:@"stripeAccount"] != (id)[NSNull null]) {
             metadata =  [NSDictionary dictionaryWithObjectsAndKeys:
                          appFee, @"application_fee",
+                         platform, @"s-platform",
                          [options valueForKey:@"stripeAccount"], @"connected_stripe_account_id", nil];
         } else {
-            metadata = [[NSDictionary alloc] init];
+            metadata = [NSDictionary dictionaryWithObjectsAndKeys:
+                        appFee, @"application_fee",
+                        platform, @"s-platform", nil];
         }
         
         NSDictionary *chargeDict = [NSDictionary dictionaryWithObjectsAndKeys:
