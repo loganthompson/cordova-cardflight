@@ -69,9 +69,6 @@ public class CDVCardFlight extends CordovaPlugin {
     public CallbackContext onTokenizeCardCallbackId;
 
     private Card mCard = null;
-    // private Charge mCharge = null;
-    private PaymentView mPaymentView;
-
     public String readerState = "DISCONNECTED";
     public ReaderType preferredReader = null;
     public CFDeviceHandler deviceHandler = new CFDeviceHandler();
@@ -104,14 +101,20 @@ public class CDVCardFlight extends CordovaPlugin {
         } else if (action.equals("beginSwipe")) {
             beginSwipe(callbackContext);
             return true;
+        } else if (action.equals("beginEMV")) {
+            beginEMV(options, callbackContext);
+            return true;
         } else if (action.equals("beginKeyed")) {
-            // beginKeyed(callbackContext);
+            beginKeyed(callbackContext);
             return true;
         } else if (action.equals("cancelTransaction")) {
             cancelTransaction(callbackContext);
             return true;
         } else if (action.equals("processCharge")) {
             processCharge(options);
+            return true;
+        } else if (action.equals("tokenizeCardWithSuccess")) {
+            tokenizeCard();
             return true;
         } else if (action.equals("registerOnReaderResponse")) {
             registerOnReaderResponse(callbackContext);
@@ -120,13 +123,13 @@ public class CDVCardFlight extends CordovaPlugin {
             registerOnEMVMessage(callbackContext);
             return true;
         } else if (action.equals("registerOnEMVCardDipped")) {
-            // registerOnEMVCardDipped(callbackContext);
+            registerOnEMVCardDipped(callbackContext);
             return true;
         } else if (action.equals("registerOnCardSwiped")) {
             registerOnCardSwiped(callbackContext);
             return true;
         } else if (action.equals("registerOnEMVCardRemoved")) {
-            // registerOnEMVCardRemoved(callbackContext);
+            registerOnEMVCardRemoved(callbackContext);
             return true;
         } else if (action.equals("registerOnReaderAttached")) {
             registerOnReaderAttached(callbackContext);
@@ -147,7 +150,7 @@ public class CDVCardFlight extends CordovaPlugin {
             registerOnTransactionResult(callbackContext);
             return true;
         } else if (action.equals("registerOnTokenizeCard")) {
-            // registerOnTokenizeCard(callbackContext);
+            registerOnTokenizeCard(callbackContext);
             return true;
         } else if (action.equals("registerOnLowBattery")) {
             registerOnLowBattery(callbackContext);
@@ -171,8 +174,6 @@ public class CDVCardFlight extends CordovaPlugin {
         String apiKey = options.has("apiKey") ? options.optString("apiKey") : null;
         String accountToken = options.has("accountToken") ? options.optString("accountToken") : null;
         int givenType = options.optInt("readerType");
-
-        Log.d(TAG, String.valueOf(givenType));
 
         CardFlight.getInstance()
             .setApiTokenAndAccountToken(apiKey, accountToken, null);
@@ -246,34 +247,14 @@ public class CDVCardFlight extends CordovaPlugin {
         callbackContext.success();
     }
 
-    // Trigger keyed entry payment view. Will show a little more than 1/4 down on screen.
-    // Enable zip by passing optional {zip:true}. Default bool value = NO
-    private void beginKeyed(final CallbackContext callbackContext) {
-        Log.d(TAG, "Begin keyed!");
-
-        FrameLayout layout = (FrameLayout) webView.getView().getParent();
-
-        PaymentView paymentView = new PaymentView(layout.getContext());
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(500, 500);
-        params.setMargins(100, 100, 100, 100);
-        paymentView.setLayoutParams(params);
-        layout.addView(paymentView);
-
-        paymentView.setVisibility(View.VISIBLE);
-
-        paymentView.bringToFront();
-        
-        callbackContext.success();
-    }
-
-    // Required arguments: amount, type ('emv', 'swipe' or 'keyed')
-    // Optional argument: description
-
-    public void processCharge(JSONObject options) {
+    // Begin an EMV transaction with setup information, including
+    // amount and optional metadata
+    private void beginEMV(JSONObject options, final CallbackContext callbackContext) {
+        Log.d(TAG, "BEGIN EMV");
         Context context = this.cordova.getActivity().getApplicationContext();
 
         // Get options and create metadata
-        String type = options.optString("type");
+        String description = options.optString("description");
         String currency = options.optString("currency");
         String stripeAccount = options.optString("stripeAccount");
         String amountString = options.optString("amount").replaceAll("[.]", "");
@@ -294,13 +275,90 @@ public class CDVCardFlight extends CordovaPlugin {
         HashMap <String, Object> chargeDetailsHash = new HashMap<String, Object>();
         chargeDetailsHash.put(Constants.REQUEST_KEY_AMOUNT, amount);
         chargeDetailsHash.put(Constants.REQUEST_KEY_META_DATA, metadata);
+        chargeDetailsHash.put("description", description);
+        chargeDetailsHash.put("currency", currency);
+
+        Reader.getDefault(context).beginEMVTransaction(amount, chargeDetailsHash);
+        UpdateReaderStatus(ReaderStatus.WAITING_FOR_DIP);
+
+        callbackContext.success();
+    }
+
+    // Trigger keyed entry payment view. Will show a little more than 1/4 down on screen.
+    // Enable zip by passing optional {zip:true}. Default bool value = NO
+    private void beginKeyed(final CallbackContext callbackContext) {
+        // Would create and display native PaymentView here
+        callbackContext.success();
+    }
+
+    // Tokenize a card (Stripe only)
+    private void tokenizeCard() {
+        Context context = this.cordova.getActivity().getApplicationContext();
+
+        if (mCard != null) {
+            mCard.tokenize(
+                context,
+                new CardFlightTokenizationHandler() {
+                    @Override
+                    public void tokenizationSuccessful(String s) {
+                        Log.d(TAG, "Tokenization Successful");
+                        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, s);
+                        pluginResult.setKeepCallback(true);
+                        onTokenizeCardCallbackId.sendPluginResult(pluginResult);
+                    }
+
+                    @Override
+                    public void tokenizationFailed(CardFlightError error) {
+                        PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR, error.getMessage());
+                        pluginResult.setKeepCallback(true);
+                        onTokenizeCardCallbackId.sendPluginResult(pluginResult);
+                    }
+                });
+        } else {
+            onTokenizeCardCallbackId.error("No card found.");
+        }
+    }
+
+    // Required arguments: amount, type ('emv', 'swipe' or 'keyed')
+    // Optional argument: description
+    public void processCharge(JSONObject options) {
+        Log.d(TAG, "options " + options);
+        Context context = this.cordova.getActivity().getApplicationContext();
+
+        // Get options and create metadata
+        String type = options.optString("type");
+        String currency = options.optString("currency");
+        String description = options.optString("description");
+        String stripeAccount = options.optString("stripeAccount");
+        String amountString = options.optString("amount").replaceAll("[.]", "");
+        String appFeeString = options.optString("applicationFee").replaceAll("[.]", "");
+        int amount = Integer.valueOf(amountString);
+        int appFee = Integer.valueOf(appFeeString);
+
+        JSONObject metadata = new JSONObject();
+        if (stripeAccount != "") {
+            try {
+                metadata.put("application_fee", appFee);
+                metadata.put("connected_stripe_account_id", stripeAccount);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }   
+        }
+
+        HashMap <String, Object> chargeDetailsHash = new HashMap<String, Object>();
+        chargeDetailsHash.put(Constants.REQUEST_KEY_AMOUNT, amount);
+        chargeDetailsHash.put(Constants.REQUEST_KEY_META_DATA, metadata);
+        chargeDetailsHash.put("description", description);
+        chargeDetailsHash.put("currency", currency);
 
         Log.d(TAG, currency);
         Log.d(TAG, type);
 
-        // Swipe
-        if (mCard != null) {
-            Log.d(TAG, "GOT A CARD");
+        if (type.equals("emv")) {
+            Log.d(TAG, "Process emv");
+            Reader.getDefault(context).emvProcessTransaction(true);
+        } else if (mCard != null) {
+            Log.d(TAG, "Process swipe");
             mCard.chargeCard(
                     context,
                     chargeDetailsHash,
@@ -312,7 +370,7 @@ public class CDVCardFlight extends CordovaPlugin {
                                 resp.put("referenceID", charge.getReferenceId());
                             } catch (JSONException e) {
                                 e.printStackTrace();
-                            }   
+                            }
                             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, resp);
                             pluginResult.setKeepCallback(true);
                             onTransactionResultCallbackId.sendPluginResult(pluginResult);
@@ -320,7 +378,7 @@ public class CDVCardFlight extends CordovaPlugin {
 
                         @Override
                         public void transactionFailed(CardFlightError error) {
-                            Log.e(TAG, "error: " + error.toString());
+                            Log.e(TAG, "error: " + error.getMessage());
                             PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR);
                             pluginResult.setKeepCallback(true);
                             onTransactionResultCallbackId.sendPluginResult(pluginResult);
@@ -401,6 +459,7 @@ public class CDVCardFlight extends CordovaPlugin {
     // Set callback ID to be a listener, reusable by the plugin.
     // After this is set, onReaderResponse will send results to onReaderResponseCallbackId
     public void registerOnReaderResponse(final CallbackContext callbackContext) {
+        Log.d(TAG, "register onReaderResponse!");
         onReaderResponseCallbackId = callbackContext;
     }
 
@@ -425,12 +484,14 @@ public class CDVCardFlight extends CordovaPlugin {
     // Set callback ID to be a listener, reusable by the plugin.
     // After this is set, onEMVCardRemoved will send results to onEMVCardRemovedCallbackId
     public void registerOnEMVCardRemoved(final CallbackContext callbackContext) {
+        Log.d(TAG, "register onEMVCardRemoved!");
         onEMVCardRemovedCallbackId = callbackContext;
     }
 
     // Set callback ID to be a listener, reusable by the plugin.
     // After this is set, onTransactionResult will send results to onTransactionResultCallbackId
     public void registerOnTransactionResult(final CallbackContext callbackContext) {
+        Log.d(TAG, "register onTransactionResult!");
         onTransactionResultCallbackId = callbackContext;
     }
 
@@ -464,8 +525,10 @@ public class CDVCardFlight extends CordovaPlugin {
         onLowBatteryCallbackId = callbackContext;
     }
 
-    // Device handler, sends messages from reader to the app
 
+    // ************************************************************
+    // Device handler, sends messages from reader to the app
+    // ************************************************************
     public class CFDeviceHandler implements CardFlightDeviceHandler {
 
         public CFDeviceHandler() {
@@ -475,7 +538,25 @@ public class CDVCardFlight extends CordovaPlugin {
 
         @Override
         public void emvTransactionResult(Charge charge, boolean requiresSignature, CFEMVMessage message) {
-            
+            PluginResult pluginResult;
+
+            Log.d(TAG, "emv transaction result");
+            Log.d(TAG, String.valueOf(charge));
+
+            if (charge == null) {
+                pluginResult = new PluginResult(PluginResult.Status.ERROR, message.getMessage());
+            } else {
+                JSONObject resp = new JSONObject();
+                try {
+                    resp.put("referenceID", charge.getReferenceId());
+                    resp.put("signature", requiresSignature);
+                } catch (JSONException e) {
+                    pluginResult = new PluginResult(PluginResult.Status.ERROR, String.valueOf(e));
+                }
+                pluginResult = new PluginResult(PluginResult.Status.OK, resp);
+            }
+            pluginResult.setKeepCallback(true);
+            onTransactionResultCallbackId.sendPluginResult(pluginResult); 
         }
 
         @Override
@@ -487,20 +568,41 @@ public class CDVCardFlight extends CordovaPlugin {
 
         @Override
         public void emvMessage(CFEMVMessage message) {
-            
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, message.getMessage());
+            pluginResult.setKeepCallback(true);
+            if (onEMVMessageCallbackId != null) {
+                Log.d(TAG, "Sending emv message to web");
+                onEMVMessageCallbackId.sendPluginResult(pluginResult);
+            }
         }
 
         @Override
         public void emvCardResponse(HashMap<String, Object> hashMap) {
+            Log.d(TAG, "emv card received");
+
+            JSONObject cardDict = new JSONObject();
             String cardType = (String) hashMap.get(Constants.CARD_TYPE);
             String firstSix = (String) hashMap.get(Constants.FIRST_SIX);
             String lastFour = (String) hashMap.get(Constants.LAST_FOUR);
-   
+            try {
+                cardDict.put("type", "emv");
+                cardDict.put("first6", firstSix);
+                cardDict.put("last4", lastFour);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, cardDict);
+            pluginResult.setKeepCallback(true);
+            onReaderResponseCallbackId.sendPluginResult(pluginResult);
         }
 
         @Override
         public void emvErrorResponse(CardFlightError error) {
-            
+            Log.d(TAG, "emv error response: " + error.getMessage());
+            // PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+            // pluginResult.setKeepCallback(true);
+            // onEMVErrorRespones.sendPluginResult(pluginResult);
         }
 
         @Override
@@ -510,17 +612,24 @@ public class CDVCardFlight extends CordovaPlugin {
 
         @Override
         public void readerBatteryLow() {
-            
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+            pluginResult.setKeepCallback(true);
+            onLowBatteryCallbackId.sendPluginResult(pluginResult);
         }
 
         @Override
         public void emvCardDipped() {
-            
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+            pluginResult.setKeepCallback(true);
+            onEMVCardDippedCallbackId.sendPluginResult(pluginResult);
         }
 
         @Override
         public void emvCardRemoved() {
-            
+            Log.d(TAG, "Card removed");
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
+            pluginResult.setKeepCallback(true);
+            onEMVCardRemovedCallbackId.sendPluginResult(pluginResult);
         }
 
         @Override
@@ -546,7 +655,7 @@ public class CDVCardFlight extends CordovaPlugin {
                 pluginResult = new PluginResult(PluginResult.Status.OK, cardObject);
             } else {
                 mCard = null;
-                pluginResult = new PluginResult(PluginResult.Status.ERROR, error.toString());
+                pluginResult = new PluginResult(PluginResult.Status.ERROR, error.getMessage());
             }
 
             if (onReaderResponseCallbackId != null) {
@@ -582,7 +691,7 @@ public class CDVCardFlight extends CordovaPlugin {
 
         @Override
         public void readerIsUpdating() {
-               
+            Log.d(TAG, "Reader updating");   
         }
 
         @Override
