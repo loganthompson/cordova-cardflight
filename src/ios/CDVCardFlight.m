@@ -240,19 +240,15 @@
     NSDecimalNumber *amount = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"amount"]];
     NSNumber *appFee = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"applicationFee"]];
     NSString *currency = [options valueForKey:@"currency"];
-    NSString *platform = [options valueForKey:@"platform"];
-    NSDictionary *metadata;
+    NSString *stripeAccount = [options valueForKey:@"stripeAccount"];
+    NSDictionary *metadata = [options valueForKey:@"metadata"];
     
-    if ([options valueForKey:@"stripeAccount"] != (id)[NSNull null]) {
-        metadata = [NSDictionary dictionaryWithObjectsAndKeys:
-                    appFee, @"application_fee",
-                    platform, @"s-platform",
-                    [options valueForKey:@"stripeAccount"], @"connected_stripe_account_id", nil];
-    } else {
-        metadata = [NSDictionary dictionaryWithObjectsAndKeys:
-                    appFee, @"application_fee",
-                    platform, @"s-platform", nil];
+    if (metadata != (id)[NSNull null]) {
+        metadata = [[NSDictionary alloc]init];
     }
+    
+    [metadata setValue:appFee forKey:@"application_fee"];
+    [metadata setValue:stripeAccount forKey:@"connected_stripe_account_id"];
     
     NSDictionary *chargeDict = [NSDictionary dictionaryWithObjectsAndKeys:
                                 metadata, @"metadata",
@@ -380,18 +376,15 @@
         [self.reader emvProcessTransaction:TRUE];
     } else if (amount) {
         NSDecimalNumber *appFee = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"applicationFee"]];
-        NSDictionary *metadata;
+        NSString *stripeAccount = [options valueForKey:@"stripeAccount"];
+        NSDictionary *metadata = [options valueForKey:@"metadata"];
         
-        if ([options valueForKey:@"stripeAccount"] != (id)[NSNull null]) {
-            metadata =  [NSDictionary dictionaryWithObjectsAndKeys:
-                         appFee, @"application_fee",
-                         platform, @"s-platform",
-                         [options valueForKey:@"stripeAccount"], @"connected_stripe_account_id", nil];
-        } else {
-            metadata = [NSDictionary dictionaryWithObjectsAndKeys:
-                        appFee, @"application_fee",
-                        platform, @"s-platform", nil];
+        if (metadata != (id)[NSNull null]) {
+            metadata = [[NSDictionary alloc]init];
         }
+        
+        [metadata setValue:appFee forKey:@"application_fee"];
+        [metadata setValue:stripeAccount forKey:@"connected_stripe_account_id"];
         
         NSDictionary *chargeDict = [NSDictionary dictionaryWithObjectsAndKeys:
                                     metadata, @"metadata",
