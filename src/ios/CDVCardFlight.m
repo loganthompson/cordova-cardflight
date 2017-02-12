@@ -243,7 +243,7 @@
     NSString *stripeAccount = [options valueForKey:@"stripeAccount"];
     NSDictionary *metadata = [options valueForKey:@"metadata"];
     
-    if (metadata != (id)[NSNull null]) {
+    if (metadata == (id)[NSNull null]) {
         metadata = [[NSDictionary alloc]init];
     }
     
@@ -369,7 +369,6 @@
     NSDictionary *options = [command.arguments objectAtIndex:0];
     NSString *type = [options valueForKey:@"type"];
     NSString *currency = [options valueForKey:@"currency"];
-    NSString *platform = [options valueForKey:@"platform"];
     NSDecimalNumber *amount = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"amount"]];
     
     if ([type isEqualToString: @"emv"]) {
@@ -379,7 +378,7 @@
         NSString *stripeAccount = [options valueForKey:@"stripeAccount"];
         NSDictionary *metadata = [options valueForKey:@"metadata"];
         
-        if (metadata != (id)[NSNull null]) {
+        if (metadata == (id)[NSNull null]) {
             metadata = [[NSDictionary alloc]init];
         }
         
