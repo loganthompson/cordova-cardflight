@@ -541,11 +541,6 @@ public class CDVCardFlight extends CordovaPlugin {
     // ************************************************************
     public class CFDeviceHandler implements CardFlightDeviceHandler {
 
-        public CFDeviceHandler() {
-            // Log.d(TAG, "Init the thing");
-            // requestMicrophoneAccess();
-        }
-
         @Override
         public void emvTransactionResult(Charge charge, boolean requiresSignature, CFEMVMessage message) {
             PluginResult pluginResult;
