@@ -203,8 +203,11 @@ public class CDVCardFlight extends CordovaPlugin {
         Log.d(TAG, "init reader");
         Context context = this.cordova.getActivity().getApplicationContext();
         Reader.getDefault(context)
-            .setPreferredReader(preferredReader)
             .setDeviceHandler(deviceHandler);
+
+        if (preferredReader != null) {
+            Reader.getDefault(context).setPreferredReader(preferredReader);   
+        }
 
         if (callbackContext != null) {
             callbackContext.success();   
@@ -259,10 +262,13 @@ public class CDVCardFlight extends CordovaPlugin {
         String stripeAccount = options.optString("stripeAccount");
         String amountString = options.optString("amount").replaceAll("[.]", "");
         String appFeeString = options.optString("applicationFee").replaceAll("[.]", "");
+        JSONObject metadata = options.optJSONObject("metadata");
         int amount = Integer.valueOf(amountString);
         int appFee = Integer.valueOf(appFeeString);
 
-        JSONObject metadata = new JSONObject();
+        if (metadata == null) {
+            metadata = new JSONObject();
+        }
         if (stripeAccount != "") {
             try {
                 metadata.put("application_fee", appFee);
@@ -332,10 +338,14 @@ public class CDVCardFlight extends CordovaPlugin {
         String stripeAccount = options.optString("stripeAccount");
         String amountString = options.optString("amount").replaceAll("[.]", "");
         String appFeeString = options.optString("applicationFee").replaceAll("[.]", "");
+        JSONObject metadata = options.optJSONObject("metadata");
         int amount = Integer.valueOf(amountString);
         int appFee = Integer.valueOf(appFeeString);
 
-        JSONObject metadata = new JSONObject();
+        if (metadata == null) {
+            metadata = new JSONObject();
+        }
+
         if (stripeAccount != "") {
             try {
                 metadata.put("application_fee", appFee);
