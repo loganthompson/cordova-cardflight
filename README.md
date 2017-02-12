@@ -6,6 +6,7 @@ This plugin allows direct interactions with the native CardFlight SDK through Ja
 [SDK Documentation](https://developers.cardflight.com/docs/api/) includes tips for the order in which to create charges, and other information useful to implementing this plugin.
 
 ##New in 2.0
+– Dynamic metadata! Just pass a 'metadata' object with other charge params
 – Adds Android support
 – _Note: Android version does not yet include keyed entry view._
 
