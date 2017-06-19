@@ -26,11 +26,11 @@ Please review the LICENSE file before proceeding. Copyright 2016 – 2017.
 
     cordova plugin add https://github.com/loganthompson/cordova-cardflight.git
 
-##Global Object
+## Global Object
 
 Access the `cardflight` globally, available after the document's `deviceReady` event.
 
-##Getting Started
+## Getting Started
 
 The callbacks for readerAttached, readerConnected and readerDisconnected will set themselves immediately, when the plugin receives Cordova's onCordovaReady event. On the native side, the reader itself is not initialized by the SDK until you set the API tokens.
 
@@ -54,7 +54,7 @@ After success, the plugin returns the bool value 'emvReady' to your successCallb
 
 ## Methods
 
-###cardflight.setApiTokens()
+### cardflight.setApiTokens()
 
 Set API tokens to initalize CardFlight with apiKey and accountToken values. Requires `apiKey` and `accountToken` arguments. `readerType` argument is optional.
 
@@ -69,7 +69,7 @@ cardflight.setApiTokens(successCallback, errorCallback, {
 
 -----
 
-###cardflight.beginSwipe()
+### cardflight.beginSwipe()
 
 Prepare the reader for a credit card swipe
 ````javascript
@@ -78,7 +78,7 @@ cardflight.beginSwipe(successCallback, errorCallback);
 
 -----
 
-###cardflight.beginEMV()
+### cardflight.beginEMV()
 
 Begin an EMV transaction with setup information, including amount and optional description
 ````javascript
@@ -90,7 +90,7 @@ cardflight.beginEMV(successCallback, errorCallback, {
 
 -----
 
-###cardflight.beginKeyed()
+### cardflight.beginKeyed()
 
 Trigger keyed entry and show input view. View will appear a little more than 1/4 down the screen, above cordova webview. Enable zip by passing optional {zip:true}. Default bool value = NO
 ````javascript
@@ -101,7 +101,7 @@ cardflight.beginKeyed(successCallback, errorCallback, {
 
 -----
 
-###cardflight.endKeyed()
+### cardflight.endKeyed()
 
 Removes the keyed-entry payment view and hides keyboard
 ````javascript
@@ -110,7 +110,7 @@ cardflight.endKeyed(successCallback, errorCallback);
 
 -----
 
-###cardflight.cancelTransaction()
+### cardflight.cancelTransaction()
 
 Cancel the current transaction
 ````javascript
@@ -119,7 +119,7 @@ cardflight.cancelTransaction(successCallback, errorCallback);
 
 -----
 
-###cardflight.destroy()
+### cardflight.destroy()
 
 Run CardFlight's destroy method
 ````javascript
@@ -128,7 +128,7 @@ cardflight.destroy(successCallback, errorCallback);
 
 -----
 
-###cardflight.processCharge()
+### cardflight.processCharge()
 
 Process a payment of any type.
 *Required arguments: amount, type ('emv', 'swipe' or 'keyed')
@@ -147,7 +147,7 @@ cardflight.processCharge(successCallback, errorCallback, {
 
 -----
 
-###cardflight.uploadSignature()
+### cardflight.uploadSignature()
 
 Upload signature PNG data if/when required. Accepts a single argument `data` as base64 encoded string.
 ````javascript
@@ -162,7 +162,7 @@ The above methods return a callback immediately, the `id` of which does not need
 
 -----
 
-###cardflight.registerOnCardSwiped()
+### cardflight.registerOnCardSwiped()
 
 Set listener on card swipe event (not the same as card or transaction responses; includes no data).
 ````javascript
@@ -171,7 +171,7 @@ cardflight.registerOnCardSwiped(successCallback, errorCallback);
 
 -----
 
-###cardflight.registerOnEMVCardDipped()
+### cardflight.registerOnEMVCardDipped()
 
 Set listener to detect when an EMV card is physically dipped.
 ````javascript
@@ -180,7 +180,7 @@ cardflight.registerOnEMVCardDipped(successCallback, errorCallback);
 
 -----
 
-###cardflight.registerOnEMVCardRemoved()
+### cardflight.registerOnEMVCardRemoved()
 
 Set listener to detect when an EMV card is physically removed.
 ````javascript
@@ -189,7 +189,7 @@ cardflight.registerOnEMVCardRemoved(successCallback, errorCallback);
 
 -----
 
-###cardflight.registerOnReaderResponse()
+### cardflight.registerOnReaderResponse()
 
 Set listener to receive updates for valid keyed card responses (will include card JSON with last4 and brand), invalidKeyedResponse (no card), readerCardResponse (card JSON with name & last4), readerSwipeDidCancel, and emvCardResponse (card JSON).
 
@@ -201,7 +201,7 @@ cardflight.registerOnReaderResponse(successCallback(card), errorCallback);
 
 -----
 
-###cardflight.registerOnReaderAttached()
+### cardflight.registerOnReaderAttached()
 
 Set listener for the event fired when a card reader is physically attached via the headphone jack.
 ````javascript
@@ -210,7 +210,7 @@ cardflight.registerOnReaderAttached(successCallback, errorCallback);
 
 -----
 
-###cardflight.registerOnEMVMessage()
+### cardflight.registerOnEMVMessage()
 
 Set a listener to receive all EMV instruction/status updates during transaction, which is useful for showing "processing" status, "Approved," "Remove Card" etc.
 
@@ -221,7 +221,7 @@ cardflight.registerOnEMVMessage(successCallback(message), errorCallback);
 
 -----
 
-###cardflight.registerOnReaderConnecting()
+### cardflight.registerOnReaderConnecting()
 
 Set a listener for the physical reader's `connecting` state (physically attached but not yet connected).
 ````javascript
@@ -230,7 +230,7 @@ cardflight.registerOnReaderConnecting(successCallback, errorCallback);
 
 -----
 
-###cardflight.registerOnReaderConnected()
+### cardflight.registerOnReaderConnected()
 
 Set a listener for the physical reader's `connected` state (physically attached and connected).
 ````javascript
@@ -239,7 +239,7 @@ cardflight.registerOnReaderConnected(successCallback, errorCallback);
 
 -----
 
-###cardflight.registerOnReaderDisconnected()
+### cardflight.registerOnReaderDisconnected()
 
 Set a listener for the physical reader's `disconnected` state (fired when unplugged).
 ````javascript
@@ -248,7 +248,7 @@ cardflight.registerOnReaderDisconnected(successCallback, errorCallback);
 
 -----
 
-###cardflight.registerOnReaderNotDetected()
+### cardflight.registerOnReaderNotDetected()
 
 Set a listener for when a connection attempt has been made but no reader was detected.
 ````javascript
@@ -257,7 +257,7 @@ cardflight.registerOnReaderNotDetected(successCallback, errorCallback);
 
 -----
 
-###cardflight.registerOnTransactionResult()
+### cardflight.registerOnTransactionResult()
 
 Set a listener for transaction results of all types. If the charge was successful and was of type emv, the callback will receive a BOOL value for `signatureRequired`.
 ````javascript
@@ -266,19 +266,19 @@ cardflight.registerOnTransactionResult(successCallback(signatureRequired), error
 
 -----
 
-###cardflight.registerOnLowBattery()
+### cardflight.registerOnLowBattery()
 Set listener for reader's low battery event.
 ````javascript
 cardflight.registerOnLowBattery(successCallback, errorCallback);
 ````
 
-##Tips
+## Tips
 - To begin an EMV charge you'll have to set the charge `amount` and `description` before the credit card is ever used. This differs from a swiped transaction, in which you'll get card information upfront and then send these arguments after the fact.
 
 - Watch the logs in Xcode while debugging (not just the browser).
 
 
-##Supported Platforms
+## Supported Platforms
 - iOS
 
 _Android in progress_
