@@ -45,6 +45,7 @@ public class CDVCardFlight extends CordovaPlugin {
         CONNECTING,
         UPDATING,
         CONNECTED,
+        CARD_INSERTED,
         WAITING_FOR_DIP,
         WAITING_FOR_SWIPE,
         REMOVE_CARD,
@@ -81,13 +82,13 @@ public class CDVCardFlight extends CordovaPlugin {
             setApiTokens(options, callbackContext);
             return true;
         } else if (action.equals("SDKVersion")) {
-            SDKVersion(callbackContext);
+            getSDKVersion(callbackContext);
             return true;
         } else if (action.equals("apiToken")) {
             apiToken(callbackContext);
             return true;
         } else if (action.equals("initReader")) {
-            initReader(callbackContext);
+            initReader(options, callbackContext);
             return true;
         } else if (action.equals("accountToken")) {
             accountToken(callbackContext);
@@ -111,7 +112,7 @@ public class CDVCardFlight extends CordovaPlugin {
             cancelTransaction(callbackContext);
             return true;
         } else if (action.equals("processCharge")) {
-            processCharge(options);
+            processCharge(options, callbackContext);
             return true;
         } else if (action.equals("tokenizeCardWithSuccess")) {
             tokenizeCard();
@@ -161,8 +162,10 @@ public class CDVCardFlight extends CordovaPlugin {
     }
 
     private void cancelTransaction(final CallbackContext callbackContext) {
+        Context context = this.cordova.getActivity().getApplicationContext();
+        Reader.getDefault(context).stopSwipe();
+
         mCard = null;
-        // mCharge = null;
         onEMVMessageCallbackId = null;
         onReaderResponseCallbackId = null;
 
@@ -173,10 +176,17 @@ public class CDVCardFlight extends CordovaPlugin {
         Context context = this.cordova.getActivity().getApplicationContext();
         String apiKey = options.has("apiKey") ? options.optString("apiKey") : null;
         String accountToken = options.has("accountToken") ? options.optString("accountToken") : null;
-        int givenType = options.optInt("readerType");
 
         CardFlight.getInstance()
             .setApiTokenAndAccountToken(apiKey, accountToken, null);
+
+        callbackContext.success();
+    }
+
+    public void initReader(JSONObject options, final CallbackContext callbackContext) {
+        Log.d(TAG, "init reader");
+        Context context = this.cordova.getActivity().getApplicationContext();
+        int givenType = options.optInt("readerType");
 
         if (givenType != 0) {
             switch (givenType) {
@@ -189,19 +199,6 @@ public class CDVCardFlight extends CordovaPlugin {
             }
         }
 
-        Reader.getDefault(context)
-            .setDeviceHandler(deviceHandler);
-
-        if (preferredReader != null) {
-            Reader.getDefault(context).setPreferredReader(preferredReader);   
-        }
-
-        callbackContext.success();
-    }
-
-    public void initReader(final CallbackContext callbackContext) {
-        Log.d(TAG, "init reader");
-        Context context = this.cordova.getActivity().getApplicationContext();
         Reader.getDefault(context)
             .setDeviceHandler(deviceHandler);
 
@@ -245,7 +242,8 @@ public class CDVCardFlight extends CordovaPlugin {
         Context context = this.cordova.getActivity().getApplicationContext();
         UpdateReaderStatus(ReaderStatus.WAITING_FOR_SWIPE);
 
-        Reader.getDefault(context).swipeHasTimeout(false).beginSwipe();
+        Reader.getDefault(context).swipeHasTimeout(false);
+        Reader.getDefault(context).beginSwipe();
 
         callbackContext.success();
     }
@@ -327,7 +325,7 @@ public class CDVCardFlight extends CordovaPlugin {
 
     // Required arguments: amount, type ('emv', 'swipe' or 'keyed')
     // Optional argument: description
-    public void processCharge(JSONObject options) {
+    public void processCharge(JSONObject options, final CallbackContext callbackContext) {
         Log.d(TAG, "options " + options);
         Context context = this.cordova.getActivity().getApplicationContext();
 
@@ -367,8 +365,10 @@ public class CDVCardFlight extends CordovaPlugin {
         if (type.equals("emv")) {
             Log.d(TAG, "Process emv");
             Reader.getDefault(context).emvProcessTransaction(true);
+            callbackContext.success();
         } else if (mCard != null) {
             Log.d(TAG, "Process swipe");
+            callbackContext.success();
             mCard.chargeCard(
                     context,
                     chargeDetailsHash,
@@ -389,7 +389,7 @@ public class CDVCardFlight extends CordovaPlugin {
                         @Override
                         public void transactionFailed(CardFlightError error) {
                             Log.e(TAG, "error: " + error.getMessage());
-                            PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR);
+                            PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR, error.getMessage());
                             pluginResult.setKeepCallback(true);
                             onTransactionResultCallbackId.sendPluginResult(pluginResult);
                         }
@@ -403,7 +403,7 @@ public class CDVCardFlight extends CordovaPlugin {
     }
 
     // Get the current SDK Version
-    private void SDKVersion(final CallbackContext callbackContext) {
+    private void getSDKVersion(final CallbackContext callbackContext) {
         String version = CardFlight.getInstance().getVersion();
         callbackContext.success(version);
     }
@@ -433,6 +433,9 @@ public class CDVCardFlight extends CordovaPlugin {
                 break;
             case WAITING_FOR_DIP:
                 readerState = "WAITING_FOR_DIP";
+                break;
+            case CARD_INSERTED:
+                readerState = "CARD_INSERTED";
                 break;
             case WAITING_FOR_SWIPE:
                 readerState = "WAITING_FOR_SWIPE";
@@ -488,6 +491,7 @@ public class CDVCardFlight extends CordovaPlugin {
     // Set callback ID to be a listener, reusable by the plugin.
     // After this is set, onCardSwiped will send results to onCardSwipedCallbackId
     public void registerOnCardSwiped(final CallbackContext callbackContext) {
+        Log.d(TAG, "register onCardSwiped!");
         onCardSwipedCallbackId = callbackContext;
     }
 
@@ -572,6 +576,19 @@ public class CDVCardFlight extends CordovaPlugin {
         }
 
         @Override
+        public void deviceBeginSwipe() {
+            Log.d(TAG, "BEGIN SWIPE");
+            
+        }
+
+        @Override
+        public void readerFail(String string, int integer) {
+            Log.d(TAG, "Reader fail");
+            // Implement method to select which AID,
+            // then call - Reader.getDefault(mContext).emvSelectApplication(aidIndex);
+        }
+
+        @Override
         public void emvMessage(CFEMVMessage message) {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, message.getMessage());
             pluginResult.setKeepCallback(true);
@@ -602,6 +619,13 @@ public class CDVCardFlight extends CordovaPlugin {
             onReaderResponseCallbackId.sendPluginResult(pluginResult);
         }
 
+        // Some other bastard card reponse that is required
+        @Override
+        public void emvCardResponse(String string1, String string2) {
+            Log.d(TAG, string1);
+            Log.d(TAG, string1);
+        }
+
         @Override
         public void emvErrorResponse(CardFlightError error) {
             Log.d(TAG, "emv error response: " + error.getMessage());
@@ -624,6 +648,7 @@ public class CDVCardFlight extends CordovaPlugin {
 
         @Override
         public void emvCardDipped() {
+            UpdateReaderStatus(ReaderStatus.CARD_INSERTED);
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
             pluginResult.setKeepCallback(true);
             onEMVCardDippedCallbackId.sendPluginResult(pluginResult);
@@ -695,11 +720,6 @@ public class CDVCardFlight extends CordovaPlugin {
         }
 
         @Override
-        public void readerIsUpdating() {
-            Log.d(TAG, "Reader updating");   
-        }
-
-        @Override
         public void readerIsConnected(boolean isConnected, CardFlightError error) {
             Log.d(TAG, "Reader connected!");
 
@@ -710,7 +730,7 @@ public class CDVCardFlight extends CordovaPlugin {
                 pluginResult = new PluginResult(PluginResult.Status.OK);
             } else {
                 Log.d(TAG, "connect error");
-                pluginResult = new PluginResult(PluginResult.Status.ERROR);
+                pluginResult = new PluginResult(PluginResult.Status.ERROR, error.getMessage());
             }
             
             pluginResult.setKeepCallback(true);
@@ -719,6 +739,7 @@ public class CDVCardFlight extends CordovaPlugin {
 
         @Override
         public void readerSwipeDetected() {
+            Log.d(TAG, "Swipe detected!");
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
             pluginResult.setKeepCallback(true);
             onCardSwipedCallbackId.sendPluginResult(pluginResult);
@@ -740,11 +761,6 @@ public class CDVCardFlight extends CordovaPlugin {
         @Override
         public void readerNotDetected() {
            
-        }
-
-        @Override
-        public void selectBluetoothDevice(ArrayList<BluetoothDevice> arrayList) {
-            
         }
     }
 }

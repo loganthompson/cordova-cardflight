@@ -37,22 +37,7 @@
         [[CFTSessionManager sharedInstance] setApiToken:apiKey accountToken:accountToken completed:^(BOOL emvReady) {
             NSLog(@"%@: %@ %@: %@", @"API TOKEN",apiKey,@" ACCOUNT TOKEN %@",accountToken);
             
-            // If the user passes a readerType, specify type during reader init
-            if ([options valueForKey:@"readerType"]) {
-                weakSelf.reader = [[CFTReader alloc] initWithReader:[[options valueForKey:@"readerType"] longValue]];
-            } else {
-                weakSelf.reader = [[CFTReader alloc] init];
-            }
-            
             CDVPluginResult* pluginResult;
-            
-            if (weakSelf.reader) {
-                [weakSelf.reader setDelegate:weakSelf];
-                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:emvReady];
-            } else {
-                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
-            }
-            
             [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }];
     }];
@@ -64,17 +49,24 @@
 - (void)initReader:(CDVInvokedUrlCommand*)command {
     NSDictionary *options = [command.arguments objectAtIndex:0];
     CDVPluginResult* pluginResult;
+
+    // Return if reader exists
+    if (self.reader) {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Reader already in place. Destroy before initializing."];
+        return [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }
     
     // If the user passes a readerType, specify type during reader init
     
     NSLog(@"init reader");
-    if ([options valueForKey:@"readerType"]) {
+    if ([options valueForKey:@"readerType"] != (id)[NSNull null]) {
         self.reader = [[CFTReader alloc] initWithReader:[[options valueForKey:@"readerType"] longValue]];
     } else {
         self.reader = [[CFTReader alloc] init];
     }
-    
-    
+
+    [self.reader setDelegate:self];
+
     if (self.reader) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     } else {
@@ -213,6 +205,8 @@
 
 - (void)destroy:(CDVInvokedUrlCommand *)command {
     [self.reader destroy];
+
+    NSLog(@"* Destroy");
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -223,7 +217,10 @@
 
 - (void)cancelTransaction:(CDVInvokedUrlCommand *)command {
     [self.reader cancelTransaction];
+
+    NSLog(@"**** Cancel");
     
+    self.card = nil;
     self.onEMVMessageCallbackId = nil;
     self.onReaderResponseCallbackId = nil;
     
@@ -371,6 +368,11 @@
     NSString *currency = [options valueForKey:@"currency"];
     NSDecimalNumber *amount = [NSDecimalNumber decimalNumberWithString:[options valueForKey:@"amount"]];
     
+
+    if (amount) {
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+    }
+
     if ([type isEqualToString: @"emv"]) {
         [self.reader emvProcessTransaction:TRUE];
     } else if (amount) {

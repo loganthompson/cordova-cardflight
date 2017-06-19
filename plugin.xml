@@ -28,7 +28,6 @@
     <header-file src="src/ios/CFTReader.h" />
     <header-file src="src/ios/CFTCard.h" />
     <header-file src="src/ios/CFTCharge.h" />
-    <header-file src="src/ios/CFTAttacheReader.h" />
     <header-file src="src/ios/CFTBaseReader.h" />
     <header-file src="src/ios/CFTCustomEntryTextField.h" />
     <header-file src="src/ios/CFTCustomView.h" />

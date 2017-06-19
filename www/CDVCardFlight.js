@@ -41,6 +41,7 @@ CardFlight.prototype.initialize = function() {
   }
   this.registerOnReaderAttached(function(){
     CFATTACHED = true;
+    cordova.fireDocumentEvent('CFReaderPlugged');
   }, errorCallback);
   this.registerOnReaderDisconnected(function(){
     CFCONNECTED = false;
