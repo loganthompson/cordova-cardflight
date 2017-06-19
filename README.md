@@ -280,5 +280,4 @@ cardflight.registerOnLowBattery(successCallback, errorCallback);
 
 ## Supported Platforms
 - iOS
-
-_Android in progress_
+- Android
