@@ -10,9 +10,9 @@ This plugin allows direct interactions with the native CardFlight SDK through Ja
 Please review the LICENSE file before proceeding. Copyright 2016 – 2017.
 
 ## New in 2.0
-– Dynamic metadata! Just pass a 'metadata' object with other charge params
-– Adds Android support
-– _Note: Android version does not yet include keyed entry view._
+- Dynamic metadata! Just pass a 'metadata' object with other charge params
+- Adds Android support
+- _Note: Android version does not yet include keyed entry view._
 
 ## New in 1.1
 - May now pass 'currency' variable upon charge creation
