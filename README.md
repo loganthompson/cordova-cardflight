@@ -60,7 +60,6 @@ After success, the plugin returns the bool value 'emvReady' to your successCallb
 
 Set API tokens to initalize CardFlight with apiKey and accountToken values. Requires `apiKey` and `accountToken` arguments.
 
-This method will also nitialize reader itself, and a success returns `emvReady` as a BOOL
 ````javascript
 cardflight.setApiTokens(successCallback, errorCallback, {
     apiKey: YOUR_CARDFLIGHT_API_KEY
