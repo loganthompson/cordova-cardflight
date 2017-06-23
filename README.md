@@ -2,7 +2,7 @@
 
 This plugin allows direct interactions with the native CardFlight SDK through JavaScript functions in your Cordova app. This includes creating EMV, swipe and keyed credit card charges, among other features.
 
-### iOS CardFlight SDK Version 3.5.1
+### iOS CardFlight SDK Version 3.6
 [SDK Documentation](https://developers.cardflight.com/docs/api/) includes tips for the order in which to create charges, and other information useful to implementing this plugin.
 
 ### Optimized for Android CardFlight SDK Version 3.2.7
@@ -13,6 +13,7 @@ Please review the LICENSE file before proceeding. Copyright 2016 – 2017.
 
 ## New in 2.0
 - Dynamic metadata! Just pass a 'metadata' object with other charge params
+- `setApitokens` no long automatically starts the reader. This is extremely helpful if you don't want the SDK to ask for microphone permissions at startup (and just provides more control).
 - Adds Android support
 - _Note: Android version does not yet include keyed entry view._
 
@@ -44,13 +45,12 @@ document.addEventListener('deviceready', function() {
     cardflight.setApiTokens(successCallback, errorCallback, {
       apiKey: YOUR_CARDFLIGHT_API_KEY,
       accountToken: YOUR_CARDFLIGHT_ACCOUNT_TOKEN,
-      readerType: TYPE_NUM
     });
   }
 });
 ````
 
-This will run the SDK's `setApiTokens` method using given credentials. It also run's the reader's `init` method, or `initWithReader` if you choose to pass in the optional readerType argument. If you know the reader you'll be using, passing this (number) value will speed up the process during initialization, but you can safely leave it out.
+This will run the SDK's `setApiTokens` method using given credentials.
 
 After success, the plugin returns the bool value 'emvReady' to your successCallback. The CardFlight SDK is now initialized and ready to continue.
 
@@ -58,14 +58,24 @@ After success, the plugin returns the bool value 'emvReady' to your successCallb
 
 ### cardflight.setApiTokens()
 
-Set API tokens to initalize CardFlight with apiKey and accountToken values. Requires `apiKey` and `accountToken` arguments. `readerType` argument is optional.
+Set API tokens to initalize CardFlight with apiKey and accountToken values. Requires `apiKey` and `accountToken` arguments.
 
 This method will also nitialize reader itself, and a success returns `emvReady` as a BOOL
 ````javascript
 cardflight.setApiTokens(successCallback, errorCallback, {
     apiKey: YOUR_CARDFLIGHT_API_KEY
     accountToken: YOUR_CARDFLIGHT_ACCOUNT_TOKEN,
-    readerType: READER_TYPE // optional
+});
+````
+
+-----
+
+### cardflight.initReader()
+
+Initialize the card reader. This method accepts a readerType argument, and is recommended.
+````javascript
+cardflight.initReader(successCallback, errorCallback, {
+    readerType: SettingsModel.preferredReader // optional
 });
 ````
 
