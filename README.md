@@ -71,7 +71,7 @@ cardflight.setApiTokens(successCallback, errorCallback, {
 
 ### cardflight.initReader()
 
-Initialize the card reader. This method accepts a readerType argument, and is recommended.
+Initialize the card reader. This method accepts a readerType argument, and is highly recommended for speed.
 ````javascript
 cardflight.initReader(successCallback, errorCallback, {
     readerType: TYPE_ENUM // optional
