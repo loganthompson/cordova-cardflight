@@ -13,7 +13,7 @@ Please review the LICENSE file before proceeding. Copyright 2016 – 2017.
 
 ## New in 2.0
 - Dynamic metadata! Just pass a 'metadata' object with other charge params
-- `setApitokens` no longer automatically starts the reader. This is extremely helpful if you don't want the SDK to ask for microphone permissions at startup (and just provides more control).
+- `setApiTokens` no longer automatically starts the reader. This is extremely helpful if you don't want the SDK to ask for microphone permissions at startup (and just provides more control).
 - Adds Android support
   - _Note: Android version does not yet include keyed entry view._
 
