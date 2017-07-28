@@ -152,9 +152,9 @@ In the case of an emv Transaction results of any type will be sent through regis
 cardflight.processCharge(successCallback, errorCallback, {
     type: CHARGE_TYPE,
     amount: CHARGE_AMOUNT, 
-    currency: USD, // example, optional
+    description: CHARGE_DESCRIPTION, // optional
+    currency: 'USD', // example, optional
     metadata: {} // optional
-    description: CHARGE_DESCRIPTION // optional
 });
 ````
 
