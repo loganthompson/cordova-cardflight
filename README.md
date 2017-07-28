@@ -150,9 +150,10 @@ Optional argument: description
 In the case of an emv Transaction results of any type will be sent through registerOnTransactionResult callbacks.
 ````javascript
 cardflight.processCharge(successCallback, errorCallback, {
-    type: CHARGE_TYPE, 
+    type: CHARGE_TYPE,
     amount: CHARGE_AMOUNT, 
-    currency: USD, // example
+    currency: USD, // example, optional
+    metadata: {} // optional
     description: CHARGE_DESCRIPTION // optional
 });
 ````
