@@ -143,7 +143,7 @@ cardflight.destroy(successCallback, errorCallback);
 
 Process a payment of any type.
 *Required arguments: amount, type ('emv', 'swipe' or 'keyed')
-Optional argument: description
+Optional arguments: description, currency, metadata
 
 *For emv charges, you can leave off amount and description, as they won't be used, but it is good practice to process charges with all available arguments.
 
