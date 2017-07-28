@@ -168,7 +168,7 @@ cardflight.uploadSignature(successCallback, errorCallback, {
 });
 ````
 
-##Register Listener Callbacks
+## Register Listener Callbacks
 
 The above methods return a callback immediately, the `id` of which does not need to last. But for listeners that persist and need to be ready for an event to fire in the future, we have to register those callbacks. Use the following methods to register (or re-register) callbacks for a given event.
 
